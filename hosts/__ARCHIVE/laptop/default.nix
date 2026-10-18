@@ -18,7 +18,5 @@
             };
         })
         config.hostSettings.users);
-
-        system.stateVersion = "25.05";
     };
 }

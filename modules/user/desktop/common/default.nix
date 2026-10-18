@@ -14,6 +14,7 @@
             wl-clipboard
             grimblast
             satty
+            linux-wallpaperengine
         ];
 
         programs.yazi = {

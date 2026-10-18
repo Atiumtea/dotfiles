@@ -1,0 +1,7 @@
+keys:
+  - &atiumtea_age age1td29f3w6z49dnm2rxn80zjfztn7gxc2vg8jh3lfjyf9vfaqmv35sanettk
+creation_rules:
+  - path_regex: hosts/x1extreme/secrets\.yaml$
+    key_groups:
+      - age:
+        - *atiumtea_age

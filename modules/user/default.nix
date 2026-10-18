@@ -13,5 +13,6 @@
         ./shells
         ./styling
         ./terminals
+        ./scripts
     ];
 }

@@ -109,12 +109,6 @@
                 action = nixvimLib.nixvim.mkRaw "require(\"substitute\").visual";
                 options.desc = "[S]ubstitute in visual mode";
             }
-            {
-                mode = "n";
-                key = "<C-o>";
-                action = "<CMD>Oil<CR>";
-                options.desc = "Open [O]il";
-            }
         ];
     };
 }

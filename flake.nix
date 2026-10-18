@@ -8,12 +8,10 @@
         lib = inputs.nixpkgs.lib;
         libM = lib // import ./lib {lib = lib;};
 
-        hosts = lib.filter (x: x != null && x != "__TEMPLATE") (lib.mapAttrsToList
-        (name: value:
-            if (value == "directory")
-            then name
-            else null)
-        (builtins.readDir ./hosts));
+        # Only expose the configurations we want to maintain.
+        hosts = [
+            "x1extreme"
+        ];
     in {
         nixosConfigurations = builtins.listToAttrs (map (host: {
             name = host;
@@ -28,6 +26,22 @@
                         };
                     }
 
+                    {
+                        nixpkgs.overlays = [
+                            inputs.pi-nix.overlays.default
+                            (final: prev: {
+                                pi = prev.pi.overrideAttrs (finalAttrs: prevAttrs: {
+                                    npmDepsHash = "sha256-geh8LH88OZybFXkR/jDeTdew6TNMdFM6jhCSYKn//dU=";
+                                    npmDeps = final.fetchNpmDeps {
+                                        inherit (finalAttrs) src;
+                                        name = "${finalAttrs.pname}-${finalAttrs.version}-npm-deps";
+                                        hash = finalAttrs.npmDepsHash;
+                                    };
+                                });
+                            })
+                        ];
+                    }
+
                     # host-specific configuration
                     {config.networking.hostName = host;}
                     ./hosts/${host}
@@ -35,6 +49,7 @@
                     # common configuration
                     ./modules/system
 
+                    # inputs.sops-nix.nixosModules.sops  # TODO: re-enable when Go 1.26 lands in nixpkgs
                     inputs.home-manager.nixosModules.home-manager
                     {
                         home-manager.useGlobalPkgs = true;
@@ -96,6 +111,25 @@
         };
         alejandra = {
             url = "github:kamadorueda/alejandra/4.0.0";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
+        zen-browser = {
+            url = "github:0xc000022070/zen-browser-flake";
+            inputs = {
+                nixpkgs.follows = "nixpkgs";
+                home-manager.follows = "home-manager";
+            };
+        };
+        pi-nix = {
+            url = "github:takinbo/pi-nix";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
+        sops-nix = {
+            url = "github:Mic92/sops-nix";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
+        nixos-hardware = {
+            url = "github:NixOS/nixos-hardware";
             inputs.nixpkgs.follows = "nixpkgs";
         };
     };

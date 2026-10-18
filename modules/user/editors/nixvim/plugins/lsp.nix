@@ -39,18 +39,6 @@
             };
         };
         lsp = {
-            servers = {
-                terraformls.enable = true;
-                helm_ls.enable = true;
-                yamlls.enable = true;
-
-                nixd.enable = true;
-                rust_analyzer.enable = true;
-                clangd.enable = true;
-
-                ty.enable = true;
-                ruff.enable = true;
-            };
             keymaps = [
                 {
                     mode = "n";

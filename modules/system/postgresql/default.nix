@@ -57,7 +57,7 @@
     config = let
         cfg = config.hostSettings.postgresql;
 
-        # Генерация SQL для создания пользователей и баз
+        # SQL generation for users and databases
         usersSql = lib.concatStringsSep "\n" (map (user: ''
             DO $$
             BEGIN
@@ -113,7 +113,7 @@
                 };
             };
 
-            # Добавить psql в системные пакеты
+            # Add psql to system packages
             environment.systemPackages = [pkgs.postgresql_16];
         };
 }

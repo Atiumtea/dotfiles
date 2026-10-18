@@ -53,17 +53,25 @@
                 ];
 
                 input-field = {
-                    size = "280, 55";
-                    outline_thickness = 2;
-                    dots_size = 0.2;
-                    dots_spacing = 0.2;
+                    size = "380, 65";
+                    outline_thickness = 3;
+
+                    dots_size = 0.28;
+                    dots_spacing = 0.25;
                     dots_center = true;
-                    fail_text = "Invalid Password ;(";
+
                     fade_on_empty = false;
-                    font_family = "SF Pro Display Bold";
-                    placeholder_text = "Password :3";
+                    placeholder_text = "<span foreground=\"##ffaa44\">Fear is the mind-killer :3</span>";
+                    fail_text = "<span foreground=\"##ff4444\">The Sandworm got your password! ($ATTEMPTS)</span>";
+
+                    outer_color = lib.mkForce "rgba(224, 139, 53, 0.8)";
+                    inner_color = lib.mkForce "rgba(20, 15, 10, 0.6)";
+                    font_color = lib.mkForce "rgb(255, 230, 200)";
+                    check_color = lib.mkForce "rgb(224, 139, 53)";
+                    fail_color = lib.mkForce "rgb(204, 51, 51)";
+
                     hide_input = false;
-                    position = "0, 0";
+                    position = "0,-20";
                     halign = "center";
                     valign = "center";
                 };

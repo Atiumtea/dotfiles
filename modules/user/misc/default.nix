@@ -13,9 +13,21 @@
 
     imports = [
         ./music.nix
+        ./obsidian.nix
     ];
 
     config = lib.mkIf config.userSettings.misc.enable {
+        home.packages = with pkgs; [
+            discord
+            pi
+            python3
+            nixd
+            alejandra
+            nix-output-monitor
+            nvd
+            nix-tree
+        ];
+
         programs = {
             feh.enable = true;
             mpv.enable = true;

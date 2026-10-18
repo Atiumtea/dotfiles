@@ -30,60 +30,37 @@ in {
                 isDefault = true;
                 preConfig = builtins.readFile "${pkgs.arkenfox-userjs}/user.js";
                 settings = {
-                    ## arkenfox user.js overrides
-                    # restore previous session
+                    # arkenfox overrides
                     "browser.startup.page" = 3;
 
-                    # re-enable captive portal detection (may be useful sometimes)
                     # "captivedetect.canonicalURL" = "http://detectportal.firefox.com/canonical.html";
                     # "network.captive-portal-service.enabled" = true;
 
-                    # don't send pings
-                    # see https://www.bleepingcomputer.com/news/software/major-browsers-to-prevent-disabling-of-click-tracking-privacy-risk
                     "browser.send_pings" = false;
 
-                    # use DoH
                     "network.trr.mode" =
                         if osConfig.services.blocky.enable
                         then 5
                         else 3;
-                    # mozilla one has stronger privacy policy (see https://developers.cloudflare.com/1.1.1.1/commitment-to-privacy/privacy-policy/firefox/)
+                    # Mozilla's DoH resolver has stronger privacy policy
                     "network.trr.uri" = "https://mozilla.cloudflare-dns.com/dns-query";
                     "network.trr.custom_uri" = "https://mozilla.cloudflare-dns.com/dns-query";
 
-                    # allow search suggestions
                     "browser.search.suggest.enabled" = true;
                     "browser.urlbar.suggest.searches" = true;
-
-                    # allow autofilling forms
                     "browser.formfill.enable" = true;
-
-                    # enable disk caching
                     "browser.cache.disk.enable" = true;
-
-                    # ?
                     "browser.sessionstore.privacy_level" = 2;
-
-                    # ?
                     "network.IDN_show_punycode" = false;
-
-                    # use downloads directory instead of asking every time
                     "browser.download.useDownloadDir" = true;
-                    # don't ask about new mimetypes
                     "browser.download.always_ask_before_handling_new_types" = false;
 
-                    # keep data on shutdown
                     "privacy.sanitize.sanitizeOnShutdown" = false;
                     "privacy.clearOnShutdown_v2.formdata" = false;
                     "privacy.clearOnShutdown_v2.cookiesAndStorage" = false;
 
-                    # relax FPP a bit due to usability concerns
-                    # `-JSDateTimeUTC` doesn't reset timezone to UTC+0
-                    # `-CSSPrefersColorScheme` allows for sites to detect colorscheme preferences
+                    # Relax FPP: keep colorscheme detection, keep local timezone
                     "privacy.fingerprintingProtection.overrides" = "+AllTargets,-CSSPrefersColorScheme,-JSDateTimeUTC";
-
-                    # otherwise addons are needed to be enabled manually after first install
-                    # "extensions.autoDisableScopes" = 0;
 
                     "toolkit.legacyUserProfileCustomizations.stylesheets" = true;
                 };

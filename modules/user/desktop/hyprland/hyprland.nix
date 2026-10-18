@@ -220,6 +220,9 @@
                     # lock
                     "$mainMod, L, exec, hyprlock"
 
+                    # keyboard backlight toggle
+                    "$mainMod, F5, exec, kbtoggle"
+
                     # music
                     "$mainMod, N, exec, $terminal --class rmpc -- rmpc"
                     "$mainMod SHIFT, N, exec, $terminal --class cava -- cava"
@@ -239,6 +242,10 @@
                     ",XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
                     ",XF86MonBrightnessUp, exec, brightnessctl s 10%+"
                     ",XF86MonBrightnessDown, exec, brightnessctl s 10%-"
+
+                    # keyboard backlight
+                    ",XF86KbdBrightnessUp, exec, brightnessctl -d tpacpi::kbd_backlight set 100%"
+                    ",XF86KbdBrightnessDown, exec, brightnessctl -d tpacpi::kbd_backlight set 0%"
                 ];
 
                 bindl = [

@@ -42,9 +42,9 @@
 
             LoginButtonTextColor = "#${colors.base07}";
             LoginButtonBackgroundColor = "#${colors.base0D}";
-            SystemButtonsIconsColor = "#${colors.base05}";
-            SessionButtonTextColor = "#${colors.base05}";
-            VirtualKeyboardButtonTextColor = "#${colors.base05}";
+            SystemButtonsIconsColor = "#${colors.base07}";
+            SessionButtonTextColor = "#${colors.base07}";
+            VirtualKeyboardButtonTextColor = "#${colors.base07}";
 
             DropdownTextColor = "#${colors.base07}";
             DropdownSelectedBackgroundColor = "#${colors.base02}";

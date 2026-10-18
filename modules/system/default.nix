@@ -12,6 +12,7 @@
         ./hardware
         ./iriun
         ./kernel
+        ./postgresql
         ./sddm
         ./security
         ./styling

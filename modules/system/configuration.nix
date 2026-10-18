@@ -5,18 +5,18 @@
     inputs,
     ...
 }: {
-    # generally default values, can be changed by specific hosts
     config = {
-        # needed to use all this
         nix = {
             settings = {
                 experimental-features = ["nix-command" "flakes"];
-
+                download-buffer-size = 268435456;
                 trusted-users = ["@wheel"];
-                # try default cache server first
-                # otherwise, try to pull from nix-community cachix server
-                # otherwise, from garnix ci servers
-                # last one is for cachyos kernels binary cache
+
+                # Limit build parallelism to prevent daemon crashes under
+                # memory pressure.
+                max-jobs = 1;
+                cores = 2;
+
                 substituters = [
                     "https://cache.nixos.org"
                     "https://nix-community.cachix.org"
@@ -30,7 +30,7 @@
                 ];
             };
 
-            gc = lib.mkIf (! config.programs.nh.enable) {
+            gc = lib.mkIf (!config.programs.nh.enable) {
                 automatic = false;
                 dates = "weekly";
                 options = "--delete-older-than 30d";
@@ -39,16 +39,13 @@
 
         environment.systemPackages = with pkgs; [
             git
-
             zip
             unzip
             rar
             gnutar
             p7zip
-
             curl
             wget
-
             ntfs3g
             xxd
         ];
@@ -60,7 +57,7 @@
                 dates = "monthly";
                 extraArgs = "--keep 20 --keep-since 7d --optimise";
             };
-            flake = "/home/deathlesz/dotfiles";
+            flake = "/home/atiumtea/dotfiles";
         };
 
         time.timeZone = "Europe/Minsk";
@@ -91,11 +88,9 @@
             };
         };
 
-        # use zsh by default
         programs.zsh.enable = true;
         environment.shells = with pkgs; [zsh];
         users.defaultUserShell = pkgs.zsh;
-        # completion for system packages (recommended according to home-manager docs)
         environment.pathsToLink = ["/share/zsh"];
 
         boot = {
@@ -106,14 +101,11 @@
                     device = "nodev";
                     useOSProber = true;
                 };
-
                 efi = {
                     canTouchEfiVariables = true;
                     efiSysMountPoint = "/boot";
                 };
             };
-
-            # use systemd
             initrd.systemd.enable = true;
         };
 
@@ -122,5 +114,9 @@
             firewall.enable = false;
         };
         services.fstrim.enable = true;
+
+        systemd.services.nix-daemon.serviceConfig = {
+            LimitNOFILE = lib.mkForce 131072;
+        };
     };
 }

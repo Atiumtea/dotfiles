@@ -24,45 +24,56 @@
                 settings = {
                     "$schema" = "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json";
                     logo = {
-                        source = "nixos_small";
+                        source = "nixos";
                         padding.top = 1;
+                        color = {
+                            "1" = "red";
+                            "2" = "red";
+                        };
                     };
-                    display.separator = "  ";
+                    display.separator = "  ->  ";
                     modules = [
                         "break"
-                        "title"
+                        {
+                            type = "title";
+                            format = "{user-name}@{host-name}";
+                        }
                         {
                             type = "os";
-                            key = "os    ";
-                            keyColor = "33";
+                            key = "os     ";
+                            keyColor = "red";
                         }
                         {
                             type = "kernel";
-                            key = "kernel";
-                            keyColor = "33";
+                            key = "kernel ";
+                            keyColor = "red";
                         }
                         {
                             type = "host";
                             format = "{5} {1}";
-                            key = "host  ";
-                            keyColor = "33";
+                            key = "host   ";
+                            keyColor = "red";
                         }
                         {
                             type = "packages";
-                            format = "{nix-system} (nixos) {nix-user} (home-manager)";
-                            key = "pkgs  ";
-                            keyColor = "33";
+                            format = "{nix-system} (nixos), {nix-user} (hm)";
+                            key = "pkgs   ";
+                            keyColor = "red";
                         }
                         {
                             type = "uptime";
                             format = "{2}h {3}m";
-                            key = "uptime";
-                            keyColor = "33";
+                            key = "uptime ";
+                            keyColor = "red";
                         }
                         {
                             type = "memory";
-                            key = "memory";
-                            keyColor = "33";
+                            key = "memory ";
+                            keyColor = "red";
+                        }
+                        {
+                            type = "custom";
+                            format = "the blood must flow";
                         }
                         "break"
                     ];
@@ -135,22 +146,28 @@
                     format = "$directory$git_branch$git_status\n$nix_shell$character";
                     right_format = "$cmd_duration$time";
 
+                    character = {
+                        success_symbol = "[▶](bold red)";
+                        error_symbol = "[▶](bold red)";
+                        vimcmd_symbol = "[⧖](bold red)";
+                    };
+
                     directory = {
-                        truncation_length = 999; # effectively disable truncation
+                        truncation_length = 999;
                         truncate_to_repo = false;
-                        style = "bold blue";
-                        read_only = "";
+                        style = "bold red";
+                        read_only = "  ";
                     };
 
                     git_branch = {
                         format = "[$symbol$branch(:$remote_branch)]($style)";
-                        symbol = "";
-                        style = "bold grey";
+                        symbol = " ";
+                        style = "bold white";
                     };
 
                     git_status = {
-                        format = "[$modified](bold grey) [$ahead_behind]($style)";
-                        style = "bold cyan";
+                        format = "[$all_status]($style)";
+                        style = "bold yellow";
                     };
 
                     nix_shell = {
@@ -170,6 +187,12 @@
                     };
                 };
             };
+        };
+
+        home.shellAliases = {
+            ls = "eza --color=always";
+            cat = "bat";
+            ".." = "cd ..";
         };
     };
 }

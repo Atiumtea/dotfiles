@@ -9,7 +9,7 @@
         };
     };
 
-    config = lib.mkIf config.hostSettings.hardware.graphics.nvidia.enable {
+    config = lib.mkIf config.hostSettings.hardware.graphics.amd.enable {
         hardware.amdgpu = {
             # NOTE: enable if encountering issues with default drivers
             # extraPackages = with pkgs; [
