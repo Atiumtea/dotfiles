@@ -1,5 +1,5 @@
 {
-    description = "Deathlesz' NixOS";
+    description = "Atiumtea's NixOS";
 
     outputs = inputs @ {...}: let
         # NOTE: hard-coded for now
@@ -22,7 +22,7 @@
                     {
                         nixpkgs = {
                             config = {allowUnfree = true;};
-                            overlays = [inputs.nix-firefox-addons.overlays.default inputs.nix-cachyos-kernel.overlays.pinned];
+                            overlays = [inputs.nix-firefox-addons.overlays.default];
                         };
                     }
 
@@ -48,6 +48,9 @@
 
                     # common configuration
                     ./modules/system
+
+                    # Declarative Flatpak application management
+                    inputs.nix-flatpak.nixosModules.nix-flatpak
 
                     # inputs.sops-nix.nixosModules.sops  # TODO: re-enable when Go 1.26 lands in nixpkgs
                     inputs.home-manager.nixosModules.home-manager
@@ -92,7 +95,7 @@
     inputs = {
         nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
         nix-firefox-addons.url = "github:osipog/nix-firefox-addons";
-        nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+
         home-manager = {
             url = "github:nix-community/home-manager";
             inputs.nixpkgs.follows = "nixpkgs";
@@ -132,5 +135,6 @@
             url = "github:NixOS/nixos-hardware";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=v0.8.0";
     };
 }

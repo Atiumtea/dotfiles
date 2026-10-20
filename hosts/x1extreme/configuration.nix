@@ -34,7 +34,7 @@
 
             styling = {
                 enable = true;
-                theme = "blood-moon";
+                theme = "signalis";
 
                 fonts = {
                     serif = {
@@ -70,6 +70,30 @@
 
         programs.nh.flake = lib.mkForce "/home/atiumtea/dotfiles";
         time.timeZone = lib.mkForce "Europe/Minsk";
+
+        # Declarative Flatpak applications.
+        services.flatpak = {
+            enable = true;
+
+            # Flathub repository.
+            remotes = [
+                {
+                    name = "flathub";
+                    location = "https://dl.flathub.org/repo/flathub.flatpakrepo";
+                }
+            ];
+
+            # Bottles — Windows application and game launcher.
+            packages = [
+                "com.usebottles.bottles"
+            ];
+
+            # Allow Bottles to access the Isaac game directory,
+            # without granting access to the entire home directory.
+            overrides.settings."com.usebottles.bottles".Context.filesystems = [
+                "/home/atiumtea/Games/Isaac:rw"
+            ];
+        };
 
         system.stateVersion = "26.05";
     };

@@ -70,6 +70,13 @@
             };
         };
 
+        # Create a writable directory for game files.
+        # Game binaries and saves remain outside the Nix store.
+        home.activation.ensureIsaacDirectory =
+            lib.hm.dag.entryAfter ["writeBoundary"] ''
+                $DRY_RUN_CMD mkdir -p "$HOME/Games/Isaac"
+            '';
+
         home.stateVersion = "25.05";
     };
 }
