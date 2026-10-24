@@ -97,7 +97,6 @@
                 };
 
                 dwindle = {
-                    pseudotile = true;
                     preserve_split = true;
                 };
 
@@ -115,6 +114,8 @@
 
                     enable_swallow = true;
                     swallow_regex = "^(${config.userSettings.terminals.defaultTerminal})$";
+
+                    pseudotile = true;
                 };
 
                 cursor = lib.mkIf osConfig.hostSettings.hardware.graphics.nvidia.enable {

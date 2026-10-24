@@ -39,7 +39,7 @@ in {
                     "browser.send_pings" = false;
 
                     "network.trr.mode" =
-                        if osConfig.services.blocky.enable
+                        if (osConfig.services ? blocky && osConfig.services.blocky.enable)
                         then 5
                         else 3;
                     # Mozilla's DoH resolver has stronger privacy policy

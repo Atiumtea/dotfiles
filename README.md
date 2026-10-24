@@ -1,197 +1,187 @@
-# dotfiles
+# NixOS Config — `x1extreme`
 
-Personal NixOS configuration — ThinkPad X1 Extreme Gen 2.
-Dark, modular, and built to evolve.
+Flake-based NixOS configuration for a Lenovo ThinkPad X1 Extreme Gen 2.  
+Built around **feature flags** so each module can be enabled or disabled per host without touching the rest of the tree.
 
-## Quick start
+---
 
-```bash
-git clone git@github.com:Atiumtea/dotfiles ~/dotfiles
-cd ~/dotfiles && direnv allow
-nixapply switch
-```
+## Features
 
-## Rebuild
+- **Flake-based**, pinned via `flake.lock`
+- **Home Manager** integration via the NixOS module
+- **Declarative per-host feature toggles** — `hostSettings.*` for system, `userSettings.*` for the user
+- **Unified theming** with Stylix + base16 (currently: `signalis`, with `dune` in the wings)
+- **Wayland desktop** — Hyprland (default) or Niri
+- **Editors** — NixVim (blink-cmp, telescope, treesitter, oil, gitsigns, dadbod, …), VS Code, IntelliJ IDEA
+- **Browsers** — Firefox (arkenfox-hardened) and Zen Browser, selectable default
+- **Terminal stack** — kitty, zsh + starship, tmux, fzf/fd/ripgrep/bat/eza, zoxide, direnv
+- **Gaming** — Steam, GameMode, Proton-GE; Bottles via declarative Flatpak
+- **Virtualization** — Docker and/or libvirt/QEMU (optional)
+- **VPN** — Mullvad (system daemon + user tray)
+- **Networking** — NetworkManager, chrony, optional Blocky DNS for Firefox DoH
+- **Hardware helpers** — NVIDIA PRIME offload, Bluetooth, backlight, CachyOS kernel (opt-in)
+- **Custom system modules** — PostgreSQL bootstrap, Iriun webcam, `tty0tty`, custom GRUB / Plymouth themes (`cybergrub-2077`, `arasaka`)
+- **Nice boot/login** — SDDM Astronaut theme, Plymouth, themed GRUB
+- **Ops scripts** — `scripts/apply-boot.sh` (rebuild helper) and `scripts/snapshot-config.sh` (config snapshot generator)
 
-```bash
-nixapply switch          # Apply now
-nixapply boot            # Apply to next boot
-nixapply check           # Format + flake check
-nixapply update          # Update inputs, then switch
-nixsnap --full           # Save full config snapshot
-```
-
-Manual fallback:
-
-```bash
-sudo nixos-rebuild switch --flake ~/dotfiles#x1extreme --max-jobs 1 --cores 2
-```
-
-## Publishing to GitHub
-
-1. Create a **new empty repo** on GitHub (do not fork — this diverged from the
-   template).
-2. Add it as remote and push:
-
-```bash
-git remote add origin git@github.com:Atiumtea/dotfiles.git
-git branch -M main
-git add -A
-git commit -m "Initial commit"
-git push -u origin main
-```
+---
 
 ## Structure
 
 ```
-hosts/x1extreme/           # Your machine — hostSettings + userSettings
-modules/system/            # Host-wide modules (audio, gaming, hardware, styling)
-modules/user/              # Per-user modules (shells, desktop, editors, browsers)
-modules/themes/            # Base16 theme definitions
-scripts/                   # apply-boot.sh, snapshot-config.sh
-```
-
-Every feature is gated behind a boolean. See the how-to guide below.
-
-## Themes
-
-Available: `blood-moon`, `dune`, `cyberpunk`, `catppuccin-mocha`, `nord`,
-`rose-pine`, `tokyo-night`.
-
-Switch in `hosts/x1extreme/configuration.nix`:
-
-```nix
-styling.theme = "blood-moon";
-```
-
-## Keybinds
-
-| Key | Action |
-|-----|--------|
-| `Super + Q` | Terminal |
-| `Super + R` | App launcher |
-| `Super + E` | File manager |
-| `Super + F` | Toggle float |
-| `Super + 1-0` | Switch workspace |
-| `Super + S` | Scratchpad |
-| `Super + L` | Lock |
-| `Super + F5` | Keyboard backlight |
-| `Fn + Space` | KB backlight up/down |
-| `Print` | Screenshot area |
-| `Shift + Print` | Screenshot + edit |
-
-## Steam / Gaming
-
-Gaming is enabled via `hostSettings.gaming.enable = true`. To install any game
-(including Wallpaper Engine):
-
-1. Launch Steam (`Super + R` -> Steam).
-2. Install through Steam's store/library normally.
-3. Wallpaper Engine: after installing in Steam, use `linux-wallpaperengine`
-   (already installed) as the renderer.
-
-## OLED protection
-
-Hyprland doesn't have built-in pixel shift. What you have:
-
-- **Dark themes**: `blood-moon` uses near-black background.
-- **Auto-lock**: 10 min idle triggers `hyprlock`.
-- **Sunset dimming**: `hyprsunset` warms colors at night.
-- Reduce idle lock timeout in `modules/user/desktop/hyprland/hypridle.nix`
-  if you want faster lock.
-
-## Shell aliases
-
-```
-ls   -> eza --color=always
-cat  -> bat
-..   -> cd ..
+.
+├── flake.nix                     # entry point, host list, overlays, inputs
+├── alejandra.toml                # formatter config (4 spaces)
+├── lib/                          # small helpers (e.g. collectDirs)
+│
+├── hosts/
+│   └── x1extreme/
+│       ├── default.nix           # wires host + user modules together
+│       ├── configuration.nix     # hostSettings: what this machine runs
+│       ├── hardware-configuration.nix
+│       ├── hardware-configuration-additional.nix
+│       └── home-atiumtea.nix     # userSettings: what this user runs
+│
+├── modules/
+│   ├── system/                   # system-level NixOS modules
+│   │   ├── configuration.nix     # nix daemon, locale, tz, bootloader, …
+│   │   ├── audio.nix
+│   │   ├── gaming.nix
+│   │   ├── mullvad.nix
+│   │   ├── users.nix
+│   │   ├── virtualization.nix
+│   │   ├── desktop/              # hyprland / niri
+│   │   ├── hardware/             # graphics (nvidia / amd / virtio), bluetooth, laptop
+│   │   ├── iriun/                # webcam-over-phone module
+│   │   ├── kernel/               # cachyos kernel + tty0tty
+│   │   ├── postgresql/
+│   │   ├── sddm/
+│   │   ├── security/             # sudo-rs
+│   │   └── styling/              # stylix, fonts, grub & plymouth themes
+│   │
+│   ├── user/                     # Home Manager modules
+│   │   ├── home.nix
+│   │   ├── git.nix
+│   │   ├── mullvad.nix
+│   │   ├── security.nix
+│   │   ├── xdg.nix
+│   │   ├── browsers/
+│   │   ├── desktop/              # hyprland, niri, waybar, rofi, mako
+│   │   ├── editors/              # nixvim, vscode, idea
+│   │   ├── misc/                 # music, obsidian, btop, lazydocker, …
+│   │   ├── shells/               # zsh + starship + tmux
+│   │   ├── styling/              # cursors, fonts, stylix
+│   │   └── terminals/            # kitty
+│   │
+│   └── themes/                   # base16 schemes (dune, …)
+│
+└── scripts/
+    ├── apply-boot.sh             # nh-based rebuild helper
+    └── snapshot-config.sh        # dumps the repo as a single text file
 ```
 
 ---
 
-## How-to guide
+## How it works
 
-### Add a package
-
-System-wide -> `modules/system/configuration.nix` (`environment.systemPackages`).
-User -> `modules/user/misc/default.nix` (`home.packages`).
-
-[search.nixos.org](https://search.nixos.org/packages)
-
-### Add a browser
-
-Create `modules/user/browsers/<name>.nix` (copy `firefox.nix`), then:
+Each host is a **list of features** — nothing more.
 
 ```nix
-userSettings.browsers.defaultBrowser = "<name>";
+# hosts/x1extreme/configuration.nix
+hostSettings = {
+  users = [{ name = "atiumtea"; isAdmin = true; }];
+
+  audio.enable              = true;
+  gaming.enable             = true;
+  mullvad.enable            = true;
+  virtualization.docker.enable  = true;
+  virtualization.libvirt.enable = true;
+  desktop.hyprland.enable   = true;
+  sddm.enable               = true;
+
+  hardware.graphics.nvidia.enable = true;
+  hardware.laptop.enable    = true;
+
+  styling = {
+    enable = true;
+    theme  = "signalis";
+    fonts.serif = { name = "Fira Sans"; package = pkgs.fira-sans; };
+    plymouth.enable = true;
+    plymouth.theme  = "arasaka";
+    grub.theme      = "cybergrub-2077";
+  };
+};
 ```
 
-Browsers auto-discover. **2 files touched.**
-
-### Add a Neovim plugin
-
-Search [nixv.im](https://nixv.im), add to `modules/user/editors/nixvim/plugins/misc.nix`. **1 file.**
-
-### Add a VS Code extension
-
-Search `vscode-extensions` on search.nixos.org, add to `modules/user/editors/vscode.nix`. **1 file.**
-
-### Add a Hyprland keybind
-
-In `modules/user/desktop/hyprland/hyprland.nix`, add to `bind = [`:
+Each module in `modules/system/` and `modules/user/` follows the same pattern:
 
 ```nix
-"$mainMod, B, exec, brave"
+options.hostSettings.gaming.enable = lib.mkEnableOption "gaming support";
+
+config = lib.mkIf config.hostSettings.gaming.enable {
+  programs.steam.enable = true;
+  programs.gamemode.enable = true;
+};
 ```
 
-**1 file.**
+So the answer to *"what does this machine do?"* is always one file: `hosts/<host>/configuration.nix` (for the system) and `hosts/<host>/home-<user>.nix` (for the user).
 
-### Add a shell alias
+---
 
-Add to `home.shellAliases` in `modules/user/shells/default.nix`. **1 file.**
+## Usage
 
-### Add a script
-
-Create `scripts/my-tool.sh`, wrap in `modules/user/scripts/default.nix`. **2 files.**
-
-### Add a theme
-
-Create `modules/themes/<name>/` with `default.nix` (16 base16 hex colors) and a
-wallpaper. Set `styling.theme = "<name>"` in your config. **2 files.**
-
-Pre-made palettes: [base16-schemes](https://github.com/tinted-theming/base16-schemes).
-
-### Add a feature with its own toggle
-
-Create `modules/user/<category>/<feature>.nix`:
-
-```nix
-{
-    options = { userSettings.feature.enable = lib.mkEnableOption "..."; };
-    config = lib.mkIf config.userSettings.feature.enable { /* ... */ };
-}
-```
-
-Import in parent `default.nix`, enable in your home file. **3 files.**
-
-### How components connect
-
-```
-configuration.nix  ->  hostSettings.*  ->  modules/system/  ->  NixOS config
-home-*.nix         ->  userSettings.*  ->  modules/user/    ->  Home Manager config
-```
-
-Rule: module declares an option, your host file flips the switch.
-
-## Formatting
+Requires Nix with flakes enabled.
 
 ```bash
-alejandra ~/dotfiles
+# build only
+nix build .#nixosConfigurations.x1extreme.config.system.build.toplevel
+
+# apply immediately
+sudo nixos-rebuild switch --flake .#x1extreme
+
+# apply to next boot
+sudo nixos-rebuild boot --flake .#x1extreme
+
+# run the helper script (wraps nh, adds checks + logging)
+./scripts/apply-boot.sh switch
+./scripts/apply-boot.sh diff      # show what would change, no apply
+./scripts/apply-boot.sh update    # nix flake update && switch
+./scripts/apply-boot.sh check     # alejandra + flake check only
 ```
 
-4-space indent.
+The helper writes logs to `~/snapshots/rebuild-<host>-<ts>.log` and refuses to run as root.
+
+---
+
+## Adding a new host
+
+1. Create `hosts/<newname>/` with `configuration.nix`, `home-<user>.nix`, and hardware files.
+2. Add `"<newname>"` to the `hosts` list in `flake.nix`.
+3. Flip the `hostSettings.*` / `userSettings.*` flags you want.
+
+That's it — everything else is shared.
+
+---
+
+## Design notes
+
+- **No `imports` soup.** Modules don't import each other; they read `config.hostSettings.*`. One import list lives in `modules/system/default.nix` and `modules/user/default.nix`.
+- **Common + host-specific split.** Everything reusable lives under `modules/`; the host directory only carries hardware quirks and feature flags.
+- **Fully declarative Flatpak.** Bottles is installed via `nix-flatpak` with a scoped filesystem permission (`~/Games/Isaac:rw`), not `flatpak install`.
+- **`lib.collectDirs`** scans `modules/themes`, GRUB themes, and Plymouth themes — drop a directory in and it's automatically selectable.
+- **`sops-nix` is prepared but not wired.** Secrets are on the TODO (`OPENROUTER_API_KEY` placeholder in `home-atiumtea.nix`).
+- **Snapshot script** — `scripts/snapshot-config.sh` produces a single-file view of the repo (like the one this README was written against), useful for sharing or archiving configs.
+
+---
+
+## Compatibility
+
+- NixOS `26.05` (system) / Home Manager `25.05`
+- Tested on: **x86_64-linux**, Lenovo ThinkPad X1 Extreme Gen 2
+- Uses `nixos-hardware` for the ThinkPad module and `inputs.niri` / `inputs.nixvim` / `inputs.stylix` / `inputs.nix-flatpak` (see `flake.lock`)
+
+---
 
 ## License
 
-Public domain ([UNLICENSE](UNLICENSE)).
+Personal configuration — no license provided. Borrow whatever is useful.

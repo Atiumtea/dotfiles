@@ -11,7 +11,6 @@
     ];
 
     config = lib.mkIf osConfig.hostSettings.styling.enable {
-        # TODO: see if this breaks things
-        gtk.gtk4.theme = config.gtk.theme; # silence warning
+        # GTK4 theme is handled by home-manager's Stylix integration now
     };
 }

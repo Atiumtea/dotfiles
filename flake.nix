@@ -29,16 +29,6 @@
                     {
                         nixpkgs.overlays = [
                             inputs.pi-nix.overlays.default
-                            (final: prev: {
-                                pi = prev.pi.overrideAttrs (finalAttrs: prevAttrs: {
-                                    npmDepsHash = "sha256-geh8LH88OZybFXkR/jDeTdew6TNMdFM6jhCSYKn//dU=";
-                                    npmDeps = final.fetchNpmDeps {
-                                        inherit (finalAttrs) src;
-                                        name = "${finalAttrs.pname}-${finalAttrs.version}-npm-deps";
-                                        hash = finalAttrs.npmDepsHash;
-                                    };
-                                });
-                            })
                         ];
                     }
 

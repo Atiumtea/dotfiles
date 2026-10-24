@@ -26,10 +26,10 @@
             hardware.bluetooth.enable = true;
             audio.enable = true;
             desktop.hyprland.enable = true;
+            desktop.x11.enable = true;
             sddm.enable = true;
             virtualization.docker.enable = true;
             virtualization.libvirt.enable = true;
-            mullvad.enable = true;
             gaming.enable = true;
 
             styling = {

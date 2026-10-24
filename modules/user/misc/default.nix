@@ -50,5 +50,11 @@
                 enable = true;
             };
         };
-    };
-}
+
+        # Pi extensions — installed declaratively via pi's own package manager.
+        # Runs on each activation; pi install is idempotent.
+        home.activation.installPiExtensions = lib.hm.dag.entryAfter ["writeBoundary"] ''
+            for pkg in pi-deepseek-cache pi-usage-ledger pi-security-scanner; do
+                $DRY_RUN_CMD ${pkgs.pi}/bin/pi install "npm:$pkg" 2>/dev/null || true
+            done
+        '';

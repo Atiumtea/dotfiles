@@ -4,7 +4,6 @@
 
         ./audio.nix
         ./gaming.nix
-        ./mullvad.nix
         ./users.nix
         ./virtualization.nix
 
