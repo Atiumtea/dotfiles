@@ -2,6 +2,7 @@
     config,
     lib,
     pkgs,
+    inputs,
     ...
 }: {
     config = {
@@ -34,7 +35,7 @@
 
             styling = {
                 enable = true;
-                theme = "signalis";
+                theme = "blood-moon";
 
                 fonts = {
                     serif = {
@@ -50,6 +51,8 @@
         };
 
         boot.loader.systemd-boot.enable = lib.mkForce false;
+
+        system.nixos.label = "git-${inputs.self.shortRev or "dirty"}";
 
         # ThinkPad X1 Extreme Gen 2 — verify bus IDs with:
         #   lspci -D | grep -E 'VGA|3D controller|Display controller'

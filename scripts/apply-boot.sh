@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
 # NixOS rebuild helper built on top of `nh`.
+# Safe, checked build/switch helper for this user's NixOS Flake.
+# Default target: ~/dotfiles#x1extreme
 #
 # Usage: apply-boot.sh [command] [options]
 #
@@ -11,13 +13,14 @@
 #   switch    Apply the configuration immediately (default)
 #   boot      Apply to the next boot only
 #   test      Apply temporarily; reverts on reboot
-#   update    Update flake inputs, then apply with switch
+#   update    Update flake inputs, then apply with switch (reverts lock on failure)
 #   info      Show current generation and nh status
 #
 # Options:
 #   --yes, -y        Skip confirmation prompts (also passed to nh via -a=false)
-#   --host <name>    Override auto-detected hostname
-#   --no-diff        Do not show nvd diff after apply
+#   --host <name>    Override auto-detected hostname (useful for multiple hosts)
+#   --no-diff        Do not show nvd diff after apply (nh does this anyway)
+#   --force          Allow building even if the Git tree is dirty
 #   -h, --help       Show this help
 #
 set -euo pipefail
@@ -32,6 +35,7 @@ COMMAND="switch"
 UPDATE_INPUTS=false
 ASSUME_YES=false
 SHOW_DIFF=true
+FORCE_BUILD=false
 HOST="$(hostname -s 2>/dev/null || echo x1extreme)"
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
@@ -47,6 +51,7 @@ while [[ $# -gt 0 ]]; do
     --yes|-y)         ASSUME_YES=true; shift ;;
     --host)           HOST="${2:?--host requires an argument}"; shift 2 ;;
     --no-diff)        SHOW_DIFF=false; shift ;;
+    --force)          FORCE_BUILD=true; shift ;;
     -h|--help)        print_help; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; print_help; exit 1 ;;
   esac
@@ -78,6 +83,27 @@ if ! command -v nh >/dev/null 2>&1; then
 fi
 
 cd "$DOTFILES"
+
+# Validate host exists in the flake
+if ! nix eval ".#nixosConfigurations.${HOST}" --apply 'x: true' >/dev/null 2>&1; then
+  echo "ERROR: Host '${HOST}' does not exist in the flake at ${DOTFILES}" >&2
+  exit 1
+fi
+
+# Warn about dirty Git tree
+if [[ -n "$(git status --porcelain)" ]]; then
+  if [[ "$FORCE_BUILD" == false ]]; then
+    echo "ERROR: Git tree is dirty (uncommitted changes)." >&2
+    echo "       Flakes only track committed files. To ensure reproducibility, please commit first:" >&2
+    echo "         git add . && git commit -m \"your message\"" >&2
+    echo "       Or bypass this warning with --force (not recommended for tagging)." >&2
+    exit 1
+  else
+    echo "WARNING: Git tree is dirty. Proceeding because --force was used." >&2
+    echo "         The resulting generation will not correspond to a clean commit." >&2
+    echo
+  fi
+fi
 
 # Warn about stale flake.lock
 if [[ -f "$DOTFILES/flake.lock" && "$UPDATE_INPUTS" == false ]]; then
@@ -116,7 +142,7 @@ run_logged() {
 # ─── `check` ──────────────────────────────────────────────────────────────────
 cmd_check() {
   echo "Running alejandra --check ..."
-  if ! run_logged alejandra --check "$DOTFILES"; then
+  if ! run_logged nix run nixpkgs#alejandra -- --check "$DOTFILES"; then
     echo "ERROR: formatting issues. Run 'alejandra .' to fix." >&2
     return 1
   fi
@@ -170,6 +196,13 @@ apply_via_nh() {
     build)  verb="build only" ;;
   esac
 
+  # Pre-flight checks
+  if [[ "$action" == "switch" || "$action" == "boot" ]]; then
+    echo "Running pre-flight checks ..."
+    cmd_check || { echo "Pre-flight failed. Aborting." >&2; exit 1; }
+    echo
+  fi
+
   echo "Host:   ${HOST}"
   echo "Flake:  ${DOTFILES}"
   echo "Action: nh os ${action} (${verb})"
@@ -196,25 +229,12 @@ apply_via_nh() {
   if [[ $status -ne 0 ]]; then
     echo
     echo "ERROR: 'nh os ${action}' failed (exit ${status}). Log: ${LOG_FILE}" >&2
+    echo "Please review the log. If this was a pre-switch inhibitor, use 'boot' instead of 'switch'." >&2
     return "$status"
-  fi
-
-  if [[ "$action" == "switch" || "$action" == "boot" ]]; then
-    echo "Running pre-flight checks ..."
-    cmd_check || { echo "Pre-flight failed. Aborting." >&2; exit 1; }
-    echo
   fi
 
   echo
   echo "Done."
-
-  if [[ "$action" == "switch" && "$SHOW_DIFF" == true ]]; then
-    if command -v nvd >/dev/null 2>&1; then
-      echo
-      echo "Current generation:"
-      nvd diff /run/current-system "$(readlink -f /run/current-system)" 2>/dev/null || true
-    fi
-  fi
 
   if [[ "$action" == "boot" ]]; then
     echo "Reboot when ready to activate the new generation."
@@ -235,6 +255,17 @@ update_inputs() {
 if [[ "$UPDATE_INPUTS" == true && "$COMMAND" != "check" && "$COMMAND" != "diff" ]]; then
   update_inputs || exit 1
   echo
+  
+  # If we are updating, and the build/switch fails, we must revert the lock file
+  if ! apply_via_nh "$COMMAND"; then
+    echo
+    echo "ERROR: Build failed after flake update." >&2
+    echo "Reverting flake.lock to previous working state to prevent a broken repository..." >&2
+    git checkout -- flake.lock
+    echo "flake.lock reverted. Please fix the build errors manually." >&2
+    exit 1
+  fi
+  exit 0
 fi
 
 case "$COMMAND" in
