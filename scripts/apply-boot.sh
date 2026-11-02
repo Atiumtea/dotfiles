@@ -10,17 +10,16 @@
 #   check     Run alejandra --check and `nix flake check`
 #   build     Build only; do not touch the current generation
 #   diff      Build and show diff vs the running system (no apply)
-#   switch    Apply the configuration immediately (default)
-#   boot      Apply to the next boot only
-#   test      Apply temporarily; reverts on reboot
+#   switch    Apply the configuration immediately (default) and tag the new generation
+#   boot      Apply to the next boot only and tag the new generation
+#   test      Apply temporarily; reverts on reboot (no tag is created)
 #   update    Update flake inputs, then apply with switch (reverts lock on failure)
 #   info      Show current generation and nh status
 #
 # Options:
 #   --yes, -y        Skip confirmation prompts (also passed to nh via -a=false)
 #   --host <name>    Override auto-detected hostname (useful for multiple hosts)
-#   --no-diff        Do not show nvd diff after apply (nh does this anyway)
-#   --force          Allow building even if the Git tree is dirty
+#   --force          Allow building even if the Git tree is dirty (skips tagging)
 #   -h, --help       Show this help
 #
 set -euo pipefail
@@ -34,13 +33,12 @@ TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
 COMMAND="switch"
 UPDATE_INPUTS=false
 ASSUME_YES=false
-SHOW_DIFF=true
 FORCE_BUILD=false
 HOST="$(hostname -s 2>/dev/null || echo x1extreme)"
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 print_help() {
-  sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
@@ -50,7 +48,6 @@ while [[ $# -gt 0 ]]; do
       COMMAND="$1"; shift ;;
     --yes|-y)         ASSUME_YES=true; shift ;;
     --host)           HOST="${2:?--host requires an argument}"; shift 2 ;;
-    --no-diff)        SHOW_DIFF=false; shift ;;
     --force)          FORCE_BUILD=true; shift ;;
     -h|--help)        print_help; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; print_help; exit 1 ;;
@@ -96,11 +93,13 @@ if [[ -n "$(git status --porcelain)" ]]; then
     echo "ERROR: Git tree is dirty (uncommitted changes)." >&2
     echo "       Flakes only track committed files. To ensure reproducibility, please commit first:" >&2
     echo "         git add . && git commit -m \"your message\"" >&2
-    echo "       Or bypass this warning with --force (not recommended for tagging)." >&2
+    echo "       Dirty files:" >&2
+    git status --short >&2
+    echo "       Or bypass this warning with --force (not recommended, tagging will be skipped)." >&2
     exit 1
   else
     echo "WARNING: Git tree is dirty. Proceeding because --force was used." >&2
-    echo "         The resulting generation will not correspond to a clean commit." >&2
+    echo "         The resulting generation will not be tagged." >&2
     echo
   fi
 fi
@@ -137,6 +136,17 @@ run_logged() {
   echo ">>> $*" | tee -a "$LOG_FILE"
   "$@" 2>&1 | tee -a "$LOG_FILE"
   return "${PIPESTATUS[0]}"
+}
+
+# Get the current generation number
+get_generation() {
+  local link
+  link="$(readlink /nix/var/nix/profiles/system 2>/dev/null || true)"
+  if [[ "$link" =~ system-([0-9]+)-link ]]; then
+    echo "${BASH_REMATCH[1]}"
+  else
+    echo ""
+  fi
 }
 
 # ─── `check` ──────────────────────────────────────────────────────────────────
@@ -203,6 +213,9 @@ apply_via_nh() {
     echo
   fi
 
+  local old_gen
+  old_gen=$(get_generation)
+
   echo "Host:   ${HOST}"
   echo "Flake:  ${DOTFILES}"
   echo "Action: nh os ${action} (${verb})"
@@ -235,6 +248,34 @@ apply_via_nh() {
 
   echo
   echo "Done."
+
+  # ─── Tagging Logic ──────────────────────────────────────────────────────────
+  if [[ "$action" == "switch" || "$action" == "boot" ]]; then
+    local new_gen
+    new_gen=$(get_generation)
+
+    if [[ -z "$new_gen" ]]; then
+      echo "WARNING: Could not determine the new generation number. Skipping tag creation." >&2
+    elif [[ "$new_gen" == "$old_gen" ]]; then
+      echo "No new generation was created (stayed at gen-$old_gen). Skipping tag." >&2
+    elif [[ "$FORCE_BUILD" == true ]]; then
+      echo "WARNING: Skipping tag creation because the build was forced on a dirty tree." >&2
+    else
+      local tag_name="gen-${new_gen}"
+      if git rev-parse "$tag_name" >/dev/null 2>&1; then
+        echo "WARNING: Tag '$tag_name' already exists. Skipping." >&2
+      else
+        echo "Creating Git tag '$tag_name'..."
+        if git tag -a "$tag_name" -m "NixOS Generation $new_gen (Git: $(git rev-parse --short HEAD))"; then
+          echo "Tag '$tag_name' created successfully."
+        else
+          echo "WARNING: Failed to create tag '$tag_name'." >&2
+        fi
+      fi
+    fi
+  elif [[ "$action" == "test" ]]; then
+    echo "Note: 'test' mode does not create a new generation, so no tag was created."
+  fi
 
   if [[ "$action" == "boot" ]]; then
     echo "Reboot when ready to activate the new generation."
