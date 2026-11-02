@@ -9,7 +9,6 @@
 
         ./desktop
         ./hardware
-        ./iriun
         ./kernel
         ./postgresql
         ./sddm

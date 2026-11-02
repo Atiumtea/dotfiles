@@ -152,8 +152,8 @@ get_generation() {
 # ─── `check` ──────────────────────────────────────────────────────────────────
 cmd_check() {
   echo "Running alejandra --check ..."
-  if ! run_logged nix run nixpkgs#alejandra -- --check "$DOTFILES"; then
-    echo "ERROR: formatting issues. Run 'nix run nixpkgs#alejandra -- .' to fix." >&2
+  if ! run_logged alejandra --check "$DOTFILES"; then
+    echo "ERROR: formatting issues. Run 'alejandra .' to fix." >&2
     return 1
   fi
 
