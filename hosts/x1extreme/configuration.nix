@@ -27,7 +27,6 @@
             hardware.bluetooth.enable = true;
             audio.enable = true;
             desktop.hyprland.enable = true;
-            desktop.x11.enable = true;
             sddm.enable = true;
             virtualization.docker.enable = true;
             virtualization.libvirt.enable = true;
@@ -52,9 +51,9 @@
 
         boot.loader.systemd-boot.enable = lib.mkForce false;
 
-        system.nixos.label = "git-${inputs.self.shortRev or "dirty"}";
+        system.nixos.label = "git-${inputs.self.shortRev or "dirty"} (${config.system.nixos.version})";
 
-        # ThinkPad X1 Extreme Gen 2 — verify bus IDs with:
+        # ThinkPad X1 Extreme Gen 2 - verify bus IDs with:
         #   lspci -D | grep -E 'VGA|3D controller|Display controller'
         hardware.nvidia.prime = {
             intelBusId = "PCI:0@0:2:0";
@@ -86,7 +85,7 @@
                 }
             ];
 
-            # Bottles — Windows application and game launcher.
+            # Bottles - Windows application and game launcher.
             packages = [
                 "com.usebottles.bottles"
             ];

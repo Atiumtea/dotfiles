@@ -38,7 +38,7 @@ HOST="$(hostname -s 2>/dev/null || echo x1extreme)"
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 print_help() {
-  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ run_logged() {
   return "${PIPESTATUS[0]}"
 }
 
-# Get the current generation number
+# Get the current generation number from the profile link
 get_generation() {
   local link
   link="$(readlink /nix/var/nix/profiles/system 2>/dev/null || true)"
@@ -153,7 +153,7 @@ get_generation() {
 cmd_check() {
   echo "Running alejandra --check ..."
   if ! run_logged nix run nixpkgs#alejandra -- --check "$DOTFILES"; then
-    echo "ERROR: formatting issues. Run 'alejandra .' to fix." >&2
+    echo "ERROR: formatting issues. Run 'nix run nixpkgs#alejandra -- .' to fix." >&2
     return 1
   fi
 
@@ -228,12 +228,7 @@ apply_via_nh() {
 
   local -a args=(nh os "$action" --hostname "$HOST" "$DOTFILES")
   $UPDATE_INPUTS && args+=(--update)
-  # nh asks by default; skip the prompt if the user already confirmed
   $ASSUME_YES && args+=(--ask=false)
-
-  # Prevent daemon crashes: limit parallelism and skip unreachable caches.
-  # The nix daemon can disconnect under high load when substituters
-  # (garnix.io, lantian) are unreachable from this network.
   args+=(--max-jobs 1 --cores 2)
 
   run_logged "${args[@]}"
@@ -246,39 +241,38 @@ apply_via_nh() {
     return "$status"
   fi
 
-  echo
-  echo "Done."
-
   # ─── Tagging Logic ──────────────────────────────────────────────────────────
   if [[ "$action" == "switch" || "$action" == "boot" ]]; then
     local new_gen
     new_gen=$(get_generation)
 
     if [[ -z "$new_gen" ]]; then
-      echo "WARNING: Could not determine the new generation number. Skipping tag creation." >&2
+      echo -e "\nWARNING: Could not determine the new generation number. Skipping tag creation." >&2
     elif [[ "$new_gen" == "$old_gen" ]]; then
-      echo "No new generation was created (stayed at gen-$old_gen). Skipping tag." >&2
+      echo -e "\nNo new generation was created (stayed at gen-$old_gen). Skipping tag." >&2
     elif [[ "$FORCE_BUILD" == true ]]; then
-      echo "WARNING: Skipping tag creation because the build was forced on a dirty tree." >&2
+      echo -e "\nWARNING: Skipping tag creation because the build was forced on a dirty tree." >&2
     else
       local tag_name="gen-${new_gen}"
       if git rev-parse "$tag_name" >/dev/null 2>&1; then
-        echo "WARNING: Tag '$tag_name' already exists. Skipping." >&2
+        echo -e "\nWARNING: Tag '$tag_name' already exists. Skipping." >&2
       else
-        echo "Creating Git tag '$tag_name'..."
+        echo -e "\n📦 Creating Git tag for this generation..."
         if git tag -a "$tag_name" -m "NixOS Generation $new_gen (Git: $(git rev-parse --short HEAD))"; then
-          echo "Tag '$tag_name' created successfully."
+          echo "✅ Successfully created tag: $tag_name"
+          echo "   To view this tag later, run: git show $tag_name"
+          echo "   To push tags to remote: git push --tags"
         else
           echo "WARNING: Failed to create tag '$tag_name'." >&2
         fi
       fi
     fi
   elif [[ "$action" == "test" ]]; then
-    echo "Note: 'test' mode does not create a new generation, so no tag was created."
+    echo -e "\nNote: 'test' mode does not create a new generation, so no tag was created."
   fi
 
   if [[ "$action" == "boot" ]]; then
-    echo "Reboot when ready to activate the new generation."
+    echo -e "\nReboot when ready to activate the new generation."
   fi
 }
 
