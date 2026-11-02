@@ -83,7 +83,7 @@ in {
         # does not work when usin
         services.mpdris2 = {
             enable = true;
-            settings.Bling.mmkeys = true;
+            multimediaKeys = true;
         };
     };
 }

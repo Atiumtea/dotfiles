@@ -9,9 +9,7 @@ in {
     config = lib.mkIf osConfig.hostSettings.desktop.enable {
         programs.rofi = {
             enable = true;
-            settings = {
-                font = "${font.name} 12";
-            };
+            font = "${font.name} 12";
             theme = let
                 mkLiteral = config.lib.formats.rasi.mkLiteral;
                 mkRgb = color: let

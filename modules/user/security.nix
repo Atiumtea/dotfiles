@@ -16,7 +16,7 @@
             ssh = {
                 enable = true;
                 enableDefaultConfig = false;
-                settings."*".addKeysToAgent = "yes";
+                matchBlocks."*".addKeysToAgent = "yes";
             };
         };
 
