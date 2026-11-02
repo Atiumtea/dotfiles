@@ -19,7 +19,7 @@
     config = lib.mkIf config.userSettings.misc.enable {
         home.packages = with pkgs; [
             discord
-          #  pi
+            #  pi
             python3
             nixd
             alejandra
