@@ -42,6 +42,10 @@
 
         services.blueman-applet.enable = true;
 
+        home.sessionVariables = {
+            LIBVIRT_DEFAULT_URI = "qemu:///system";
+        };
+
         wayland.windowManager.hyprland.settings.input.kb_layout =
             lib.mkForce "us,ru";
 
