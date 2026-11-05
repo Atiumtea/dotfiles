@@ -1,187 +1,274 @@
-# NixOS Config — `x1extreme`
+# README.md
 
-Flake-based NixOS configuration for a Lenovo ThinkPad X1 Extreme Gen 2.  
-Built around **feature flags** so each module can be enabled or disabled per host without touching the rest of the tree.
+```markdown
+# dotfiles
 
----
-
-## Features
-
-- **Flake-based**, pinned via `flake.lock`
-- **Home Manager** integration via the NixOS module
-- **Declarative per-host feature toggles** — `hostSettings.*` for system, `userSettings.*` for the user
-- **Unified theming** with Stylix + base16 (currently: `signalis`, with `dune` in the wings)
-- **Wayland desktop** — Hyprland (default) or Niri
-- **Editors** — NixVim (blink-cmp, telescope, treesitter, oil, gitsigns, dadbod, …), VS Code, IntelliJ IDEA
-- **Browsers** — Firefox (arkenfox-hardened) and Zen Browser, selectable default
-- **Terminal stack** — kitty, zsh + starship, tmux, fzf/fd/ripgrep/bat/eza, zoxide, direnv
-- **Gaming** — Steam, GameMode, Proton-GE; Bottles via declarative Flatpak
-- **Virtualization** — Docker and/or libvirt/QEMU (optional)
-- **VPN** — Mullvad (system daemon + user tray)
-- **Networking** — NetworkManager, chrony, optional Blocky DNS for Firefox DoH
-- **Hardware helpers** — NVIDIA PRIME offload, Bluetooth, backlight, CachyOS kernel (opt-in)
-- **Custom system modules** — PostgreSQL bootstrap, Iriun webcam, `tty0tty`, custom GRUB / Plymouth themes (`cybergrub-2077`, `arasaka`)
-- **Nice boot/login** — SDDM Astronaut theme, Plymouth, themed GRUB
-- **Ops scripts** — `scripts/apply-boot.sh` (rebuild helper) and `scripts/snapshot-config.sh` (config snapshot generator)
+Declarative NixOS + Home Manager configuration for **x1extreme**.
+Single flake, one host, everything driven by feature toggles.
 
 ---
 
-## Structure
+## Architecture
 
-```
-.
-├── flake.nix                     # entry point, host list, overlays, inputs
-├── alejandra.toml                # formatter config (4 spaces)
-├── lib/                          # small helpers (e.g. collectDirs)
-│
-├── hosts/
-│   └── x1extreme/
-│       ├── default.nix           # wires host + user modules together
-│       ├── configuration.nix     # hostSettings: what this machine runs
-│       ├── hardware-configuration.nix
-│       ├── hardware-configuration-additional.nix
-│       └── home-atiumtea.nix     # userSettings: what this user runs
-│
-├── modules/
-│   ├── system/                   # system-level NixOS modules
-│   │   ├── configuration.nix     # nix daemon, locale, tz, bootloader, …
-│   │   ├── audio.nix
-│   │   ├── gaming.nix
-│   │   ├── mullvad.nix
-│   │   ├── users.nix
-│   │   ├── virtualization.nix
-│   │   ├── desktop/              # hyprland / niri
-│   │   ├── hardware/             # graphics (nvidia / amd / virtio), bluetooth, laptop
-│   │   ├── iriun/                # webcam-over-phone module
-│   │   ├── kernel/               # cachyos kernel + tty0tty
-│   │   ├── postgresql/
-│   │   ├── sddm/
-│   │   ├── security/             # sudo-rs
-│   │   └── styling/              # stylix, fonts, grub & plymouth themes
-│   │
-│   ├── user/                     # Home Manager modules
-│   │   ├── home.nix
-│   │   ├── git.nix
-│   │   ├── mullvad.nix
-│   │   ├── security.nix
-│   │   ├── xdg.nix
-│   │   ├── browsers/
-│   │   ├── desktop/              # hyprland, niri, waybar, rofi, mako
-│   │   ├── editors/              # nixvim, vscode, idea
-│   │   ├── misc/                 # music, obsidian, btop, lazydocker, …
-│   │   ├── shells/               # zsh + starship + tmux
-│   │   ├── styling/              # cursors, fonts, stylix
-│   │   └── terminals/            # kitty
-│   │
-│   └── themes/                   # base16 schemes (dune, …)
-│
-└── scripts/
-    ├── apply-boot.sh             # nh-based rebuild helper
-    └── snapshot-config.sh        # dumps the repo as a single text file
-```
-
----
-
-## How it works
-
-Each host is a **list of features** — nothing more.
+The whole configuration is built around **two option namespaces** and
+**one rule**: no module does anything unless a flag in `hostSettings.*`
+or `userSettings.*` turns it on.
 
 ```nix
-# hosts/x1extreme/configuration.nix
+lib.mkIf config.hostSettings.<feature>.enable { ... }   # system side
+lib.mkIf config.userSettings.<feature>.enable { ... }   # home side
+```
+
+Host files (`hosts/x1extreme/*.nix`) contain nothing but those flags.
+`modules/**/*.nix` contain nothing but the implementations. Adding or
+disabling a subsystem is a one-line change in `configuration.nix` or
+`home-<user>.nix` — never a comment-out-the-import dance.
+
+### Two layers
+
+| Namespace        | Level        | Consumed by                |
+|------------------|--------------|----------------------------|
+| `hostSettings`   | NixOS        | `modules/system/**`        |
+| `userSettings`   | Home Manager | `modules/user/**`          |
+
+`hosts/x1extreme/configuration.nix` reads like a manifest:
+
+```nix
 hostSettings = {
-  users = [{ name = "atiumtea"; isAdmin = true; }];
-
-  audio.enable              = true;
-  gaming.enable             = true;
-  mullvad.enable            = true;
-  virtualization.docker.enable  = true;
-  virtualization.libvirt.enable = true;
-  desktop.hyprland.enable   = true;
-  sddm.enable               = true;
-
+  audio.enable                    = true;
+  gaming.enable                   = true;
+  sddm.enable                     = true;
+  security.sudo-rs.enable         = true;
   hardware.graphics.nvidia.enable = true;
-  hardware.laptop.enable    = true;
-
-  styling = {
-    enable = true;
-    theme  = "signalis";
-    fonts.serif = { name = "Fira Sans"; package = pkgs.fira-sans; };
-    plymouth.enable = true;
-    plymouth.theme  = "arasaka";
-    grub.theme      = "cybergrub-2077";
-  };
+  hardware.laptop.enable          = true;
+  desktop.hyprland.enable         = true;
+  virtualization.docker.enable    = true;
+  virtualization.libvirt.enable   = true;
+  styling = { enable = true; theme = "blood-moon"; };
 };
 ```
 
-Each module in `modules/system/` and `modules/user/` follows the same pattern:
+`hosts/x1extreme/home-atiumtea.nix` does the same for the user side.
+Some `userSettings` derive themselves automatically — e.g.
+`userSettings.shells.zsh.enable` is forced on if `osConfig` has zsh as
+the login shell, and `userSettings.browsers.<x>.enable` follows
+`browsers.defaultBrowser`.
+
+### User → Home Manager wiring
+
+`hosts/x1extreme/default.nix` reads `hostSettings.users` (a list of
+`{ name, isAdmin, shell? }`) and generates, for each user:
+
+- a `users.users.<name>` entry with the right groups
+  (`wheel`, `docker`, `libvirtd`, `gamemode`, `dialout` — from other
+  `hostSettings.*` flags);
+- a `home-manager.users.<name>` block that imports
+  `home-<name>.nix` + `modules/user`, and passes the username down as
+  `_module.args.username` (needed by `modules/user/shells`).
+
+Adding a second user is one entry in `hostSettings.users` plus a
+`home-<name>.nix`.
+
+### Themes
+
+`modules/themes/<name>/default.nix` is a base16 attrset:
 
 ```nix
-options.hostSettings.gaming.enable = lib.mkEnableOption "gaming support";
-
-config = lib.mkIf config.hostSettings.gaming.enable {
-  programs.steam.enable = true;
-  programs.gamemode.enable = true;
-};
+{ scheme = "DUNE"; polarity = "dark";
+  background = ./wallpaper.jpg;
+  base00 = "16120e"; base05 = "ffae57"; /* … */ }
 ```
 
-So the answer to *"what does this machine do?"* is always one file: `hosts/<host>/configuration.nix` (for the system) and `hosts/<host>/home-<user>.nix` (for the user).
+`hostSettings.styling.theme` selects one. Both `modules/system/styling/stylix.nix`
+and `modules/user/styling/stylix.nix` import the same file and hand it to
+Stylix. SDDM, GRUB, Plymouth, rofi, kitty, Hyprland, cava and rmpc all
+read colors from `config.lib.stylix.colors` — swapping one string
+recolors the entire system.
 
----
+Custom GRUB / Plymouth themes live in
+`modules/system/styling/{grub,plymouth}/themes/<name>/theme.nix` and are
+picked with `styling.grub.theme` / `styling.plymouth.theme`. `"stylix"`
+(a flat color) is always a valid value.
 
-## Usage
+`lib/default.nix` exposes `collectDirs`, used to auto-discover theme
+directories so the option `enum` never drifts.
 
-Requires Nix with flakes enabled.
+### Structure
 
-```bash
-# build only
-nix build .#nixosConfigurations.x1extreme.config.system.build.toplevel
-
-# apply immediately
-sudo nixos-rebuild switch --flake .#x1extreme
-
-# apply to next boot
-sudo nixos-rebuild boot --flake .#x1extreme
-
-# run the helper script (wraps nh, adds checks + logging)
-./scripts/apply-boot.sh switch
-./scripts/apply-boot.sh diff      # show what would change, no apply
-./scripts/apply-boot.sh update    # nix flake update && switch
-./scripts/apply-boot.sh check     # alejandra + flake check only
+```
+flake.nix
+lib/                             # collectDirs and tiny helpers
+hosts/
+  x1extreme/
+    default.nix                  # wires hostSettings.users → home-manager
+    configuration.nix            # hostSettings flags
+    hardware-configuration*.nix  # generated + manual kernel params
+    home-atiumtea.nix            # userSettings flags
+modules/
+  system/                        # NixOS modules (hostSettings.*)
+    configuration.nix            # base system: nix-daemon, nh, GRUB, locales, chrony
+    users.nix                    # creates users from hostSettings.users
+    audio.nix  gaming.nix  virtualization.nix  security/
+    desktop/{hyprland,niri}.nix
+    hardware/{bluetooth,laptop}.nix  hardware/graphics/{amd,nvidia,virtio}.nix
+    kernel/                      # opt-in CachyOS kernel + tty0tty module
+    postgresql/                  # opt-in Postgres
+    sddm/                        # SDDM Astronaut wired to Stylix colors
+    styling/                     # stylix.nix, fonts.nix, grub/, plymouth/
+  user/                          # Home Manager modules (userSettings.*)
+    home.nix  git.nix  security.nix  xdg.nix
+    shells/   terminals/  browsers/  editors/  misc/
+    desktop/
+      common/                    # rofi, waybar, mako, yazi, grimblast, satty
+      hyprland/                  # hyprland, hypridle, hyprlock, hyprsunset, hyprpaper
+      niri/
+    styling/                     # cursors, fonts, stylix (HM side)
+  themes/
+    dune/                        # base16 scheme + wallpaper
+scripts/
+  apply-boot.sh                  # rebuild wrapper (see below)
 ```
 
-The helper writes logs to `~/snapshots/rebuild-<host>-<ts>.log` and refuses to run as root.
+---
+
+## What's in the modules
+
+**System (`modules/system/`)**
+
+| File                     | Provides                                                       |
+|--------------------------|----------------------------------------------------------------|
+| `configuration.nix`      | nix-daemon limits, `nh`, GRUB, EFI, locales, chrony, fstrim    |
+| `users.nix`              | user accounts + groups from `hostSettings.users`               |
+| `audio.nix`              | PipeWire + WirePlumber + JACK + rtkit + `playerctld`, pavucontrol |
+| `gaming.nix`             | Steam, Gamemode, `proton-ge-bin`                               |
+| `virtualization.nix`     | libvirt/QEMU/KVM (+virtiofsd, SPICE USB redirection), Docker   |
+| `security/`              | `sudo-rs`, restricted to `wheel`                               |
+| `desktop/hyprland.nix`   | `programs.hyprland`                                            |
+| `desktop/niri.nix`       | `programs.niri`                                                |
+| `hardware/bluetooth.nix` | BlueZ + blueman                                                |
+| `hardware/laptop.nix`    | NVIDIA Prime offload, finegrained power management, brightnessctl |
+| `hardware/graphics/`     | `hardware.graphics` + nvidia (open, modesetting, vaapi), amd, virtio |
+| `kernel/`                | optional CachyOS kernel (`cachyosKernels.*`, scx_lavld), tty0tty |
+| `postgresql/`            | optional local Postgres with declarative users/dbs             |
+| `sddm/`                  | SDDM Astronaut, colors fed from Stylix                         |
+| `styling/`               | Stylix (polarity, image, fonts), fontconfig, GRUB/Plymouth themes |
+
+**Home (`modules/user/`)**
+
+| File                          | Provides                                                |
+|-------------------------------|---------------------------------------------------------|
+| `shells/zsh.nix`              | zsh + autosuggestions + syntax-highlighting + fzf-tab   |
+| `shells/default.nix`          | starship, fzf, zoxide, eza, bat, direnv, tmux, fastfetch |
+| `terminals/kitty.nix`         | kitty (opacity, ligatures, no bell)                     |
+| `browsers/firefox.nix`        | Firefox, arkenfox `user.js`, uBlock/Privacy Badger, DoH |
+| `browsers/zen.nix`            | Zen browser                                             |
+| `editors/nixvim/`             | NixVim: blink-cmp, LSP (nixd, clangd, rust-analyzer, ruff, ty, yamlls, helm_ls, terraformls), telescope, treesitter, oil, gitsigns, lazygit, trouble, conform, which-key, todo-comments, bufferline, lualine, typst-preview |
+| `editors/vscode.nix`          | VS Code                                                 |
+| `desktop/common/`             | rofi, waybar, mako, yazi, grimblast, satty, wl-clipboard, linux-wallpaperengine |
+| `desktop/hyprland/`           | Hyprland, hypridle, hyprlock, hyprsunset, hyprpaper, XDG portals |
+| `desktop/niri/`               | Niri + grimblast/satty                                  |
+| `misc/`                       | discord, mpv, btop, feh, lazydocker, mpd + rmpc + cava, obsidian |
+| `styling/`                    | cursors (Quintom), fonts, Stylix HM targets             |
+| `git.nix`                     | git + lazygit (overrideGpg)                             |
+| `security.nix`                | gpg, ssh, ssh-agent, gpg-agent (pinentry-qt)            |
+| `xdg.nix`                     | XDG dirs, mimeApps                                      |
 
 ---
 
-## Adding a new host
+## Custom scripts
 
-1. Create `hosts/<newname>/` with `configuration.nix`, `home-<user>.nix`, and hardware files.
-2. Add `"<newname>"` to the `hosts` list in `flake.nix`.
-3. Flip the `hostSettings.*` / `userSettings.*` flags you want.
+**`scripts/apply-boot.sh`** — safe rebuild wrapper around `nh os`.
+Subcommands: `check`, `build`, `diff` (uses `nvd`), `switch`, `boot`,
+`test`, `update` (reverts `flake.lock` if the build fails), `info`.
+On successful `switch`/`boot` it creates a `gen-<N>` git tag.
+Refuses to build on a dirty tree unless `--force`.
 
-That's it — everything else is shared.
+**`modules/user/desktop/common/waybar-bluetooth-display.sh`** — tiny
+helper that renders the current Bluetooth connection in waybar.
 
----
-
-## Design notes
-
-- **No `imports` soup.** Modules don't import each other; they read `config.hostSettings.*`. One import list lives in `modules/system/default.nix` and `modules/user/default.nix`.
-- **Common + host-specific split.** Everything reusable lives under `modules/`; the host directory only carries hardware quirks and feature flags.
-- **Fully declarative Flatpak.** Bottles is installed via `nix-flatpak` with a scoped filesystem permission (`~/Games/Isaac:rw`), not `flatpak install`.
-- **`lib.collectDirs`** scans `modules/themes`, GRUB themes, and Plymouth themes — drop a directory in and it's automatically selectable.
-- **`sops-nix` is prepared but not wired.** Secrets are on the TODO (`OPENROUTER_API_KEY` placeholder in `home-atiumtea.nix`).
-- **Snapshot script** — `scripts/snapshot-config.sh` produces a single-file view of the repo (like the one this README was written against), useful for sharing or archiving configs.
+**`modules/user/desktop/common/rofi/powermenu.sh`** — the rofi
+power menu.
 
 ---
 
-## Compatibility
+## Aliases
 
-- NixOS `26.05` (system) / Home Manager `25.05`
-- Tested on: **x86_64-linux**, Lenovo ThinkPad X1 Extreme Gen 2
-- Uses `nixos-hardware` for the ThinkPad module and `inputs.niri` / `inputs.nixvim` / `inputs.stylix` / `inputs.nix-flatpak` (see `flake.lock`)
+```sh
+ls  = eza --color=always
+cat = bat
+..  = cd ..
+```
+
+Plus starship/fzf/zoxide integration from their respective HM modules.
 
 ---
 
-## License
+## Hotkeys
 
-Personal configuration — no license provided. Borrow whatever is useful.
+### Hyprland (`$mainMod = SUPER`)
+
+| Key                         | Action                                |
+|-----------------------------|---------------------------------------|
+| `SUPER+Q`                   | terminal                              |
+| `SUPER+C`                   | kill window                           |
+| `SUPER+M`                   | exit Hyprland                         |
+| `SUPER+E`                   | file manager (yazi)                   |
+| `SUPER+F`                   | toggle floating                       |
+| `SUPER+R`                   | rofi launcher                         |
+| `SUPER+1..0`                | workspace 1..10                       |
+| `SUPER+SHIFT+1..0`          | move window to workspace              |
+| `SUPER+S`                   | special workspace                     |
+| `SUPER+SHIFT+S`             | move window to special                |
+| `SUPER+J/K`                 | move window left/right                |
+| `SUPER+SHIFT+J/K`           | move window down/up                   |
+| `SUPER+KP_ENTER`            | rofi power menu                       |
+| `SUPER+L`                   | hyprlock                              |
+| `SUPER+F5`                  | toggle keyboard backlight (`kbtoggle`) |
+| `SUPER+N` / `SUPER+SHIFT+N` | rmpc / cava                           |
+| `PRINT`                     | grimblast area → clipboard            |
+| `SUPER+PRINT`               | grimblast area → file                 |
+| `SHIFT+PRINT`               | grimblast area → satty edit           |
+| `ALT+PRINT`                 | grimblast full screen → clipboard     |
+| `SUPER+ALT+PRINT`           | grimblast full screen → file          |
+| `SUPER+drag` / right-drag   | move / resize window                  |
+| `XF86Audio*`, `XF86MonBrightness*` | volume / mute / brightness     |
+
+Waybar, hyprlock, hypridle and hyprsunset are all configured from the
+same Stylix palette.
+
+### NixVim (`leader = Space`)
+
+| Key           | Action                                  |
+|---------------|-----------------------------------------|
+| `<Esc>`       | clear search highlight                  |
+| `<C-o>`       | open Oil                                |
+| `s` / `ss` / `S` | substitute (operator / line / EOL)   |
+| `s` (visual)  | substitute selection                    |
+| `gR` / `gd` / `gD` / `gt` | references / definitions / declaration / type definitions |
+| `K`           | hover                                   |
+| `ca`          | code action                             |
+| `<leader>rn`  | rename                                  |
+| `<leader>d`   | diagnostic float                        |
+| `<leader>]d` / `<leader>[d` | next / prev diagnostic     |
+| `<leader>ff` / `<leader>fs` | telescope files / live grep |
+| `<leader>lg`  | lazygit                                 |
+| `<leader>sv` / `sh` / `se` / `sx` | split v / split h / equalize / close |
+| `<leader>to` / `tp` / `tn` / `tx` | new / prev / next / close tab |
+| `<leader>xw` / `xd` / `xq` / `xl` / `xt` | trouble workspaces / buffer / quickfix / loclist / todo |
+| `]h` / `[h`   | next / prev hunk                        |
+
+---
+
+## Adding a host
+
+`flake.nix` builds `nixosConfigurations` from a plain list:
+
+```nix
+hosts = [ "x1extreme" ];
+```
+
+To add a host, drop a `hosts/<name>/` with `default.nix`,
+`configuration.nix`, `hardware-configuration.nix` and
+`home-<user>.nix`, then append the name to that list. Everything else
+is shared through `modules/`.
+```
