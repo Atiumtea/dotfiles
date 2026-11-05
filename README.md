@@ -1,6 +1,3 @@
-# README.md
-
-```markdown
 # dotfiles
 
 Declarative NixOS + Home Manager configuration for **x1extreme**.
@@ -271,4 +268,3 @@ To add a host, drop a `hosts/<name>/` with `default.nix`,
 `configuration.nix`, `hardware-configuration.nix` and
 `home-<user>.nix`, then append the name to that list. Everything else
 is shared through `modules/`.
-```
