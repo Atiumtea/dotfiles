@@ -262,3 +262,84 @@ window#waybar.empty #window {
 #taskbar button.urgent {
   border-bottom-color: @base08;
 }
+
+
+/* ======================================================== */
+/* Hyproled */
+/* ======================================================== */
+
+#custom-hyproled {
+  color: @base0D;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+
+  min-width: 16px;
+  min-height: 16px;
+  font-size: 1px;
+
+  padding: 3px 7px;
+  margin: 2px 6px;
+
+  border-bottom: 2px solid @base0D;
+}
+
+#custom-hyproled.disabled {
+  color: @base04;
+  border-bottom-color: @base03;
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-off.svg"));
+}
+
+#custom-hyproled.error {
+  color: @base08;
+  border-bottom-color: @base08;
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-error.svg"));
+}
+
+#custom-hyproled.mask-0001 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-0001.svg"));
+}
+
+#custom-hyproled.mask-0010 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-0010.svg"));
+}
+
+#custom-hyproled.mask-0011 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-0011.svg"));
+}
+
+#custom-hyproled.mask-0100 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-0100.svg"));
+}
+
+#custom-hyproled.mask-0110 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-0110.svg"));
+}
+
+#custom-hyproled.mask-0111 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-0111.svg"));
+}
+
+#custom-hyproled.mask-1000 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-1000.svg"));
+}
+
+#custom-hyproled.mask-1001 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-1001.svg"));
+}
+
+#custom-hyproled.mask-1011 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-1011.svg"));
+}
+
+#custom-hyproled.mask-1100 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-1100.svg"));
+}
+
+#custom-hyproled.mask-1101 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-1101.svg"));
+}
+
+#custom-hyproled.mask-1110 {
+  background-image: -gtk-recolor(url("@HYPROLED_ICON_DIR@/hyproled-1110.svg"));
+}

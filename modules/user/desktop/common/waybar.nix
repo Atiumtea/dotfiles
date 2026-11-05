@@ -1,10 +1,38 @@
 {
     config,
+    inputs,
     lib,
     osConfig,
+    pkgs,
     ...
-}: {
+}: let
+    hyproledPackage = pkgs.stdenvNoCC.mkDerivation {
+        pname = "hyproled";
+        version = "0.3.0-dev";
+        src = inputs.hyproled;
+        nativeBuildInputs = [pkgs.makeWrapper];
+        dontBuild = true;
+
+        installPhase = ''
+            install -Dm755 "$src/hyproled" "$out/bin/hyproled"
+            install -d "$out/share/hyproled/icons"
+            cp -r "$src/assets/icons/." "$out/share/hyproled/icons/"
+
+            wrapProgram "$out/bin/hyproled" \
+                --prefix PATH : "${lib.makeBinPath (with pkgs; [
+                bash
+                coreutils
+                jq
+                util-linux
+                brightnessctl
+                hyprland
+            ])}"
+        '';
+    };
+in {
     config = lib.mkIf osConfig.hostSettings.desktop.enable {
+        home.packages = [hyproledPackage];
+
         programs.waybar = {
             enable = true;
 
@@ -35,6 +63,7 @@
                         "custom/bluetooth"
                         "network"
                         "memory"
+                        "custom/hyproled"
                         "tray"
                         "battery"
                     ];
@@ -149,6 +178,15 @@
                         max-length = 25;
                     };
 
+                    "custom/hyproled" = {
+                        exec = "${hyproledPackage}/bin/hyproled --status";
+                        return-type = "json";
+                        interval = "once";
+                        signal = 10;
+                        format = " ";
+                        tooltip = true;
+                    };
+
                     mpris = {
                         format = "{player_icon}  {dynamic}";
                         format-paused = "{status_icon} {dynamic}";
@@ -203,7 +241,12 @@
                 };
             };
 
-            style = lib.mkAfter (builtins.readFile ./waybar.css);
+            style = lib.mkAfter (
+                lib.replaceStrings
+                ["@HYPROLED_ICON_DIR@"]
+                ["${hyproledPackage}/share/hyproled/icons"]
+                (builtins.readFile ./waybar.css)
+            );
         };
 
         xdg.configFile."waybar/bluetooth-display.sh" = {

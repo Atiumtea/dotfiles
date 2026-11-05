@@ -278,6 +278,23 @@
         "type": "github"
       }
     },
+    "hyproled": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793917987,
+        "narHash": "sha256-LYAHj5ux+TfakC/YlZFF3U6qYlnBtI1o5rBhxtb517s=",
+        "owner": "Atiumtea",
+        "repo": "hyproled",
+        "rev": "4c072feac687313990cd9b17ef2f52f03d7e7564",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Atiumtea",
+        "ref": "feature/state-and-brightness",
+        "repo": "hyproled",
+        "type": "github"
+      }
+    },
     "niri": {
       "inputs": {
         "niri-stable": "niri-stable",
@@ -511,6 +528,7 @@
       "inputs": {
         "alejandra": "alejandra",
         "home-manager": "home-manager",
+        "hyproled": "hyproled",
         "niri": "niri",
         "nix-firefox-addons": "nix-firefox-addons",
         "nix-flatpak": "nix-flatpak",
