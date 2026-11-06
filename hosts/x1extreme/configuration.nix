@@ -25,6 +25,7 @@
             hardware.graphics.amd.enable = false;
             hardware.laptop.enable = true;
             hardware.bluetooth.enable = true;
+            hardware.uinput.enable = true;
             audio.enable = true;
             desktop.hyprland.enable = true;
             sddm.enable = true;

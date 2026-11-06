@@ -21,7 +21,7 @@
                 isNormalUser = true;
 
                 extraGroups =
-                    ["networkmanager"]
+                    ["networkmanager" "input" "uinput"]
                     ++ (lib.optional (
                         if user ? isAdmin
                         then user.isAdmin

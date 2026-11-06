@@ -4,6 +4,7 @@
 
         ./bluetooth.nix
         ./laptop.nix
+        ./uinput.nix
     ];
 
     config = {
