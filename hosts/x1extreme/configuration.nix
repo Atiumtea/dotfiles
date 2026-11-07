@@ -17,6 +17,15 @@
                 {
                     name = "atiumtea";
                     isAdmin = true;
+
+                    extraGroups = [
+                        "networkmanager"
+                        "input"
+                        "uinput"
+                        "docker"
+                        "libvirtd"
+                        "gamemode"
+                    ];
                 }
             ];
 
@@ -60,8 +69,6 @@
             intelBusId = "PCI:0@0:2:0";
             nvidiaBusId = "PCI:1@0:0:0";
         };
-
-        users.users.atiumtea.extraGroups = ["libvirtd"];
 
         networking.networkmanager.enable = true;
         networking.firewall.enable = lib.mkForce true;

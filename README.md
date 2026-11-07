@@ -53,18 +53,21 @@ the login shell, and `userSettings.browsers.<x>.enable` follows
 
 ### User → Home Manager wiring
 
-`hosts/x1extreme/default.nix` reads `hostSettings.users` (a list of
-`{ name, isAdmin, shell? }`) and generates, for each user:
+hostSettings.users` is a list of typed per-user records:
 
-- a `users.users.<name>` entry with the right groups
-  (`wheel`, `docker`, `libvirtd`, `gamemode`, `dialout` — from other
-  `hostSettings.*` flags);
-- a `home-manager.users.<name>` block that imports
-  `home-<name>.nix` + `modules/user`, and passes the username down as
-  `_module.args.username` (needed by `modules/user/shells`).
+- `name` — username;
+- `isAdmin` — whether the user receives administrative privileges (`wheel`);
+- `shell` — login shell (defaults to zsh);
+- `extraGroups` — additional system groups assigned specifically to this user.
 
-Adding a second user is one entry in `hostSettings.users` plus a
-`home-<name>.nix`.
+Two modules consume this list:
+
+- `modules/system/users.nix` creates `users.users.<name>` entries, configuring the account, login shell and group membership. `isAdmin` controls membership in `wheel`; `extraGroups` defines all other explicitly assigned groups.
+- `hosts/<host>/default.nix` generates a `home-manager.users.<name>` block for each user. It imports `home-<name>.nix` and `modules/user`, and passes the username through `_module.args.username` (needed by `modules/user/shells`).
+
+System-wide `hostSettings.*` flags enable services and functionality, but do not automatically grant every user access to them. Permissions are assigned individually through each user's `extraGroups`.
+
+Adding a second user requires one entry in `hostSettings.users` and a corresponding `home-<name>.nix` file.
 
 ### Themes
 
@@ -135,7 +138,7 @@ scripts/
 | File                     | Provides                                                       |
 |--------------------------|----------------------------------------------------------------|
 | `configuration.nix`      | nix-daemon limits, `nh`, GRUB, EFI, locales, chrony, fstrim    |
-| `users.nix`              | user accounts + groups from `hostSettings.users`               |
+| `users.nix`              | user accounts + groups from per-user `extraGroups`               |
 | `audio.nix`              | PipeWire + WirePlumber + JACK + rtkit + `playerctld`, pavucontrol |
 | `gaming.nix`             | Steam, Gamemode, `proton-ge-bin`                               |
 | `virtualization.nix`     | libvirt/QEMU/KVM (+virtiofsd, SPICE USB redirection), Docker   |

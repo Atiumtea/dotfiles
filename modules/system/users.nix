@@ -8,7 +8,34 @@
         hostSettings = {
             users = lib.mkOption {
                 description = "List of users to create on the host";
-                type = lib.types.listOf lib.types.attrs;
+
+                type = lib.types.listOf (lib.types.submodule {
+                    options = {
+                        name = lib.mkOption {
+                            type = lib.types.str;
+                            description = "Username";
+                        };
+
+                        isAdmin = lib.mkOption {
+                            type = lib.types.bool;
+                            default = false;
+                            description = "Whether the user has administrative privileges";
+                        };
+
+                        shell = lib.mkOption {
+                            type = lib.types.package;
+                            default = pkgs.zsh;
+                            description = "User login shell";
+                        };
+
+                        extraGroups = lib.mkOption {
+                            type = lib.types.listOf lib.types.str;
+                            default = [];
+                            description = "Additional system groups assigned only to this user";
+                            example = ["networkmanager" "input" "uinput"];
+                        };
+                    };
+                });
             };
         };
     };
@@ -20,24 +47,14 @@
             value = {
                 isNormalUser = true;
 
-                extraGroups =
-                    ["networkmanager" "input" "uinput"]
-                    ++ (lib.optional (
-                        if user ? isAdmin
-                        then user.isAdmin
-                        else false
-                    ) "wheel")
-                    ++ (lib.optional config.hostSettings.kernel.tty0tty.enable "dialout")
-                    ++ (lib.optional config.hostSettings.gaming.enable "gamemode")
-                    ++ (lib.optional config.hostSettings.virtualization.docker.enable "docker")
-                    ++ (lib.optional config.hostSettings.virtualization.libvirt.enable "libvirtd");
+                extraGroups = lib.unique (
+                    user.extraGroups
+                    ++ lib.optional user.isAdmin "wheel"
+                );
 
                 createHome = true;
 
-                shell =
-                    if user ? shell
-                    then user.shell
-                    else pkgs.zsh;
+                shell = user.shell;
             };
         })
         config.hostSettings.users);
@@ -53,9 +70,12 @@
         })
         config.hostSettings.users);
 
-        # enable zsh if necessary
+        # Enable zsh if necessary.
         programs.zsh = let
-            zshUsed = builtins.any (user: (! (user ? shell) || user.shell == pkgs.zsh)) config.hostSettings.users;
+            zshUsed = builtins.any (
+                user: user.shell == pkgs.zsh
+            )
+            config.hostSettings.users;
         in
             lib.mkIf zshUsed {
                 enable = true;
