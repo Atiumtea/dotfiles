@@ -14,6 +14,11 @@
             git.enable = true;
             misc.enable = true;
 
+            hyproled.autoShift = {
+                enable = true;
+                interval = "15min";
+            };
+
             vscode.enable = true;
             obsidian.enable = true;
 

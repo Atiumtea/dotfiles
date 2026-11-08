@@ -8,6 +8,7 @@
         ./hypridle.nix
         ./hyprland.nix
         ./hyprlock.nix
+        ./hyproled.nix
         ./hyprsunset.nix
     ];
 
