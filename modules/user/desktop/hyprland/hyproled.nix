@@ -8,27 +8,8 @@
 }: let
     cfg = config.userSettings.hyproled.autoShift;
 
-    hyproledPackage = pkgs.stdenvNoCC.mkDerivation {
-        pname = "hyproled";
-        version = "0.4.0-dev";
-
-        dontUnpack = true;
-
-        nativeBuildInputs = [pkgs.makeWrapper];
-
-        installPhase = ''
-            install -Dm755 ${inputs.hyproled}/hyproled $out/bin/hyproled
-
-            wrapProgram $out/bin/hyproled \
-                --prefix PATH : ${lib.makeBinPath (with pkgs; [
-                bash
-                brightnessctl
-                coreutils
-                hyprland
-                jq
-                util-linux
-            ])}
-        '';
+    hyproledPackage = import ../common/hyproled-package.nix {
+        inherit inputs lib pkgs;
     };
 
     pixelShiftRunner = pkgs.writeShellScript "hyproled-pixel-shift-step" ''
