@@ -9,6 +9,16 @@
     hyproledPackage = import ./hyproled-package.nix {
         inherit inputs lib pkgs;
     };
+
+    hyproledControl = pkgs.writeShellApplication {
+        name = "hyproled-waybar-control";
+        runtimeInputs = [
+            hyproledPackage
+            pkgs.jq
+            pkgs.rofi
+        ];
+        text = builtins.readFile ./waybar-hyproled-control.sh;
+    };
 in {
     config = lib.mkIf osConfig.hostSettings.desktop.enable {
         home.packages = [hyproledPackage];
@@ -165,6 +175,7 @@ in {
                         signal = 10;
                         format = " ";
                         tooltip = true;
+                        on-click = "${hyproledControl}/bin/hyproled-waybar-control";
                     };
 
                     mpris = {
