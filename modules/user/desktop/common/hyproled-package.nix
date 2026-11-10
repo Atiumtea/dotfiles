@@ -21,6 +21,7 @@ pkgs.stdenvNoCC.mkDerivation {
             --prefix PATH : "${lib.makeBinPath (with pkgs; [
             bash
             coreutils
+            gawk
             jq
             util-linux
             brightnessctl

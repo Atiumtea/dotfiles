@@ -158,6 +158,44 @@ in {
 
     config = lib.mkMerge [
         (lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {
+            assertions = [
+                {
+                    assertion =
+                        cfg.initialState.pixelShiftIndex
+                        <= (
+                            if cfg.initialState.pixelShiftMode == "orbit-3x3"
+                            then 8
+                            else if cfg.initialState.pixelShiftMode == "orbit-2x2"
+                            then 3
+                            else 1
+                        );
+                    message = "userSettings.hyproled.initialState.pixelShiftIndex is outside the selected Pixel Shift mode's range.";
+                }
+                {
+                    assertion = let
+                        percentages = cfg.brightness.compensationPercentOfMaxByPixelCount;
+                    in
+                        builtins.all (
+                            key:
+                                builtins.hasAttr key percentages
+                                && percentages.${key} >= 0
+                                && percentages.${key} <= 1000
+                        ) ["1" "2" "3"];
+                    message = "userSettings.hyproled.brightness.compensationPercentOfMaxByPixelCount must define keys 1, 2, and 3 with values from 0 to 1000.";
+                }
+                {
+                    assertion =
+                        cfg.initialState.area
+                        == null
+                        || builtins.match "^[0-9]+:[0-9]+:[0-9]+:[0-9]+$" cfg.initialState.area != null;
+                    message = "userSettings.hyproled.initialState.area must be null or use x:y:w:h format.";
+                }
+                {
+                    assertion = cfg.brightness.device != "";
+                    message = "userSettings.hyproled.brightness.device must not be empty.";
+                }
+            ];
+
             home.packages = [hyproledPackage];
 
             xdg.configFile."hyproled/config.json".text = builtins.toJSON {

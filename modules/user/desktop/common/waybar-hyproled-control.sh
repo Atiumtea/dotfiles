@@ -45,10 +45,16 @@ read_setting() {
 mask_enabled=$(read_setting 'if has("status") then (if .version >= 4 then .maskEnabled else true end) else .maskEnabled end' false)
 pixel_shift=$(read_setting '.pixelShift' false)
 pixel_shift_mode=$(read_setting '.pixelShiftMode' '"orbit-2x2"')
-pixel_shift_index=$(read_setting '.pixelShiftIndex' 0)
-off_pixels=$(read_setting '.offPixels' 1)
-phase=$(read_setting '.phase' 0)
 brightness_compensation=$(read_setting '.brightnessCompensationEnabled // .brightnessEnabled' false)
+
+activate_pixel_shift_mode() {
+    local mode="$1"
+    if [[ "$pixel_shift" == true ]]; then
+        hyproled --pixel-shift-mode "$mode"
+    else
+        hyproled --pixel-shift --pixel-shift-mode "$mode"
+    fi
+}
 
 run_rofi() {
     local prompt="$1"
@@ -107,10 +113,10 @@ while true; do
 
     if [[ "$page" == 0 ]]; then
         case "$choice" in
-            "Orbit 2x2 (default)") hyproled --pixel-shift-mode orbit-2x2 ;;
-            "Orbit 3x3") hyproled --pixel-shift-mode orbit-3x3 ;;
-            "Linear horizontal") hyproled --pixel-shift-mode linear-horizontal ;;
-            "Linear vertical") hyproled --pixel-shift-mode linear-vertical ;;
+            "Orbit 2x2 (default)") activate_pixel_shift_mode orbit-2x2 ;;
+            "Orbit 3x3") activate_pixel_shift_mode orbit-3x3 ;;
+            "Linear horizontal") activate_pixel_shift_mode linear-horizontal ;;
+            "Linear vertical") activate_pixel_shift_mode linear-vertical ;;
             "Enable Pixel Shift") hyproled --pixel-shift --pixel-shift-mode "$pixel_shift_mode" ;;
             "Disable Pixel Shift")
                 if [[ "$mask_enabled" == true ]]; then
