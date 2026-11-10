@@ -6,7 +6,8 @@
     pkgs,
     ...
 }: let
-    cfg = config.userSettings.hyproled.autoShift;
+    cfg = config.userSettings.hyproled;
+    autoShift = cfg.autoShift;
 
     hyproledPackage = import ../common/hyproled-package.nix {
         inherit inputs lib pkgs;
@@ -58,45 +59,157 @@
         exec ${hyproledPackage}/bin/hyproled --shift-step
     '';
 in {
-    options.userSettings.hyproled.autoShift = {
-        enable = lib.mkEnableOption "automatic hyproled Pixel Shift advancement";
+    options.userSettings.hyproled = {
+        initialState = {
+            maskEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Whether the OLED mask is enabled on the first launch or after declarative defaults change.";
+            };
 
-        interval = lib.mkOption {
-            type = lib.types.str;
-            default = "15min";
-            description = "Interval between automatic Pixel Shift position changes.";
+            pixelShiftEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether Pixel Shift is enabled on the first launch or after declarative defaults change.";
+            };
+
+            pixelShiftMode = lib.mkOption {
+                type = lib.types.enum [
+                    "linear-horizontal"
+                    "linear-vertical"
+                    "orbit-2x2"
+                    "orbit-3x3"
+                ];
+                default = "orbit-2x2";
+                description = "Initial Pixel Shift mode. Fixed remains available through the CLI.";
+            };
+
+            pixelShiftIndex = lib.mkOption {
+                type = lib.types.ints.between 0 8;
+                default = 0;
+                description = "Initial Pixel Shift position index.";
+            };
+
+            maskPhase = lib.mkOption {
+                type = lib.types.ints.between 0 3;
+                default = 0;
+                description = "Initial 2x2 mask phase.";
+            };
+
+            disabledPixels = lib.mkOption {
+                type = lib.types.ints.between 1 3;
+                default = 1;
+                description = "Initial number of disabled pixels in each 2x2 block.";
+            };
+
+            monitor = lib.mkOption {
+                type = lib.types.ints.unsigned;
+                default = 0;
+                description = "Hyprland monitor ID used by hyproled.";
+            };
+
+            area = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Optional mask area in x:y:w:h format.";
+            };
+
+            invert = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether to invert the configured mask area.";
+            };
+        };
+
+        brightness = {
+            device = lib.mkOption {
+                type = lib.types.str;
+                default = "intel_backlight";
+                description = "brightnessctl device used for optional OLED brightness compensation.";
+            };
+
+            compensationEnabled = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Initial preference for brightness compensation. Disabled by default.";
+            };
+
+            compensationPercentOfMaxByPixelCount = lib.mkOption {
+                type = lib.types.attrsOf lib.types.int;
+                default = {
+                    "1" = 10;
+                    "2" = 20;
+                    "3" = 30;
+                };
+                description = "Brightness compensation percentages of maximum brightness for 1, 2, or 3 disabled pixels.";
+            };
+        };
+
+        autoShift = {
+            enable = lib.mkEnableOption "automatic hyproled Pixel Shift advancement";
+
+            interval = lib.mkOption {
+                type = lib.types.str;
+                default = "15min";
+                description = "Interval between automatic Pixel Shift position changes.";
+            };
         };
     };
 
-    config = lib.mkIf (osConfig.hostSettings.desktop.hyprland.enable && cfg.enable) {
-        home.packages = [hyproledPackage];
+    config = lib.mkMerge [
+        (lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {
+            home.packages = [hyproledPackage];
 
-        systemd.user.services.hyproled-pixel-shift = {
-            Unit = {
-                Description = "Advance hyproled Pixel Shift position";
+            xdg.configFile."hyproled/config.json".text = builtins.toJSON {
+                version = 1;
+                defaults = {
+                    maskEnabled = cfg.initialState.maskEnabled;
+                    pixelShift = cfg.initialState.pixelShiftEnabled;
+                    pixelShiftMode = cfg.initialState.pixelShiftMode;
+                    pixelShiftIndex = cfg.initialState.pixelShiftIndex;
+                    phase = cfg.initialState.maskPhase;
+                    disabledPixels = cfg.initialState.disabledPixels;
+                    monitor = cfg.initialState.monitor;
+                    area = cfg.initialState.area;
+                    invert = cfg.initialState.invert;
+                };
+                brightness = {
+                    enabled = cfg.brightness.compensationEnabled;
+                    device = cfg.brightness.device;
+                    compensationPercentOfMaxByPixelCount = cfg.brightness.compensationPercentOfMaxByPixelCount;
+                };
+            };
+        })
+
+        # The timer implementation is intentionally unchanged in this revision.
+        (lib.mkIf (osConfig.hostSettings.desktop.hyprland.enable && autoShift.enable) {
+            systemd.user.services.hyproled-pixel-shift = {
+                Unit = {
+                    Description = "Advance hyproled Pixel Shift position";
+                };
+
+                Service = {
+                    Type = "oneshot";
+                    ExecStart = "${pixelShiftRunner}";
+                };
             };
 
-            Service = {
-                Type = "oneshot";
-                ExecStart = "${pixelShiftRunner}";
-            };
-        };
+            systemd.user.timers.hyproled-pixel-shift = {
+                Unit = {
+                    Description = "Periodically advance hyproled Pixel Shift";
+                };
 
-        systemd.user.timers.hyproled-pixel-shift = {
-            Unit = {
-                Description = "Periodically advance hyproled Pixel Shift";
-            };
+                Timer = {
+                    OnStartupSec = autoShift.interval;
+                    OnUnitActiveSec = autoShift.interval;
+                    AccuracySec = "1min";
+                    Unit = "hyproled-pixel-shift.service";
+                };
 
-            Timer = {
-                OnStartupSec = cfg.interval;
-                OnUnitActiveSec = cfg.interval;
-                AccuracySec = "1min";
-                Unit = "hyproled-pixel-shift.service";
+                Install = {
+                    WantedBy = ["timers.target"];
+                };
             };
-
-            Install = {
-                WantedBy = ["timers.target"];
-            };
-        };
-    };
+        })
+    ];
 }

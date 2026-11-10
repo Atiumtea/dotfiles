@@ -17,6 +17,7 @@
 
                 exec-once = [
                     "waybar"
+                    "hyproled --restore"
                     "hyprctl setcursor ${config.userSettings.styling.cursor.name} ${toString config.userSettings.styling.cursor.size}"
                     "[workspace 1 silent] $browser"
                     "[workspace 2 silent] $terminal"

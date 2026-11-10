@@ -17,7 +17,10 @@
             pkgs.jq
             pkgs.rofi
         ];
-        text = builtins.readFile ./waybar-hyproled-control.sh;
+        text = ''
+            export HYPROLED_ROFI_THEME="${config.xdg.configHome}/rofi/hyproled.rasi"
+            ${builtins.readFile ./waybar-hyproled-control.sh}
+        '';
     };
 in {
     config = lib.mkIf osConfig.hostSettings.desktop.enable {

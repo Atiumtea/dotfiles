@@ -66,6 +66,7 @@ in {
 
         xdg.configFile = {
             "rofi/launcher.rasi".source = ./launcher.rasi;
+            "rofi/hyproled.rasi".source = ./hyproled.rasi;
             "rofi/powermenu.rasi".source = ./powermenu.rasi;
             "rofi/powermenu.sh" = {
                 source = ./powermenu.sh;
