@@ -281,11 +281,11 @@
     "hyproled": {
       "flake": false,
       "locked": {
-        "lastModified": 1794315313,
-        "narHash": "sha256-e+CxCqYqSVN7Wn2sjx+6uGNBOp/pF+fbVqLwF46aOYc=",
+        "lastModified": 1794324529,
+        "narHash": "sha256-vycFKFLp86htkDlVfpfVjDIcev0POtSvUT3BvW4zS54=",
         "owner": "Atiumtea",
         "repo": "hyproled",
-        "rev": "04a820569562d8bd2013273f47bfa6205662d38a",
+        "rev": "a6fc8d06bb384f59e050ae92efe5526190fb36f9",
         "type": "github"
       },
       "original": {
