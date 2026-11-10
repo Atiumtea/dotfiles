@@ -65,6 +65,8 @@ run_rofi() {
         -location 0 \
         -p "$prompt" \
         -theme "$theme_file" \
+        -kb-move-char-back Control+b \
+        -kb-move-char-forward Control+f \
         -kb-custom-1 Right \
         -kb-custom-2 Left)
     status=$?
