@@ -13,50 +13,70 @@
         inherit inputs lib pkgs;
     };
 
-    pixelShiftRunner = pkgs.writeShellScript "hyproled-pixel-shift-step" ''
+    schedulerState = pkgs.writeShellScript "hyproled-scheduler-state" ''
         set -Eeuo pipefail
 
-        state_file="''${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set}/hyproled/state.json"
+        status_json="$(${hyproledPackage}/bin/hyproled --status)"
+        ${pkgs.jq}/bin/jq -r '
+            .class as $classes
+            | if ($classes | type) != "array" then
+                error("Hyproled status does not contain a class array")
+              elif ($classes | index("error")) != null then
+                error("Hyproled state requires recovery")
+              else
+                (
+                    ($classes | index("active") != null)
+                    and (
+                        any($classes[]; startswith("mask-"))
+                        or (
+                            ($classes | index("pixel-shift-enabled") != null)
+                            and ($classes | index("pixel-shift-mode-fixed") == null)
+                        )
+                    )
+                )
+              end
+        ' <<<"$status_json"
+    '';
 
-        # No active session is a normal condition.
-        [[ -e "$state_file" ]] || exit 0
+    effectStepRunner = pkgs.writeShellScript "hyproled-effect-step" ''
+        set -Eeuo pipefail
 
-        if ! ${pkgs.jq}/bin/jq -e '
-            type == "object" and
-            (.version == 1 or .version == 2 or .version == 3 or .version == 4 or .version == 5) and
-            (.status == "active" or .status == "applying" or .status == "restoring")
-        ' "$state_file" >/dev/null; then
-            printf 'hyproled: invalid state file; skipping automatic Pixel Shift\n' >&2
+        should_step="$(${schedulerState})"
+        [[ "$should_step" == true ]] || exit 0
+
+        exec ${hyproledPackage}/bin/hyproled -s
+    '';
+
+    schedulerSync = pkgs.writeShellScript "hyproled-scheduler-sync" ''
+        set -Eeuo pipefail
+
+        state_dir="''${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set}/hyproled"
+        ${pkgs.coreutils}/bin/mkdir -p "$state_dir"
+        ${pkgs.coreutils}/bin/chmod 700 "$state_dir"
+
+        # Serialize scheduler decisions with hyproled state transactions.
+        exec 9>"$state_dir/lock"
+        ${pkgs.util-linux}/bin/flock 9
+
+        if ! should_step="$(${schedulerState})"; then
+            ${pkgs.systemd}/bin/systemctl --user stop hyproled-pixel-shift.timer || true
             exit 1
         fi
 
-        status=$(${pkgs.jq}/bin/jq -r '.status' "$state_file")
-
-        if [[ "$status" != "active" ]]; then
-            printf 'hyproled: state requires recovery (%s); skipping Pixel Shift\n' "$status" >&2
-            exit 1
-        fi
-
-        pixel_shift=$(${pkgs.jq}/bin/jq -r '.pixelShift // false' "$state_file")
-        [[ "$pixel_shift" == true ]] || exit 0
-
-        mode=$(${pkgs.jq}/bin/jq -r '
-            if .version >= 5 then .pixelShiftMode else "fixed" end
-        ' "$state_file")
-
-        case "$mode" in
-            fixed)
-                exit 0
+        case "$should_step" in
+            true)
+                # Restart the one-shot timer from the latest committed state change.
+                exec ${pkgs.systemd}/bin/systemctl --user restart hyproled-pixel-shift.timer
                 ;;
-            linear-horizontal|linear-vertical|orbit-2x2|orbit-3x3)
+            false)
+                exec ${pkgs.systemd}/bin/systemctl --user stop hyproled-pixel-shift.timer
                 ;;
             *)
-                printf 'hyproled: invalid Pixel Shift mode: %s\n' "$mode" >&2
+                printf 'hyproled: invalid scheduler state: %s\n' "$should_step" >&2
+                ${pkgs.systemd}/bin/systemctl --user stop hyproled-pixel-shift.timer || true
                 exit 1
                 ;;
         esac
-
-        exec ${hyproledPackage}/bin/hyproled --shift-step
     '';
 in {
     options.userSettings.hyproled = {
@@ -146,12 +166,12 @@ in {
         };
 
         autoShift = {
-            enable = lib.mkEnableOption "automatic hyproled Pixel Shift advancement";
+            enable = lib.mkEnableOption "automatic hyproled active-effect advancement";
 
             interval = lib.mkOption {
                 type = lib.types.str;
                 default = "15min";
-                description = "Interval between automatic Pixel Shift position changes.";
+                description = "Interval between automatic steps of active dynamic hyproled effects.";
             };
         };
     };
@@ -219,35 +239,71 @@ in {
             };
         })
 
-        # The timer implementation is intentionally unchanged in this revision.
+        # The path unit reacts to runtime state updates; the timer exists only
+        # while at least one dynamic effect needs periodic advancement.
         (lib.mkIf (osConfig.hostSettings.desktop.hyprland.enable && autoShift.enable) {
             systemd.user.services.hyproled-pixel-shift = {
                 Unit = {
-                    Description = "Advance hyproled Pixel Shift position";
+                    Description = "Advance active dynamic hyproled effects";
                 };
 
                 Service = {
                     Type = "oneshot";
-                    ExecStart = "${pixelShiftRunner}";
+                    ExecStart = "${effectStepRunner}";
                 };
             };
 
             systemd.user.timers.hyproled-pixel-shift = {
                 Unit = {
-                    Description = "Periodically advance hyproled Pixel Shift";
+                    Description = "Periodically advance active dynamic hyproled effects";
                 };
 
                 Timer = {
-                    OnStartupSec = autoShift.interval;
-                    OnUnitActiveSec = autoShift.interval;
+                    # The path-triggered sync service rearms this one-shot timer
+                    # after every committed hyproled state update.
+                    OnActiveSec = autoShift.interval;
                     AccuracySec = "1min";
                     Unit = "hyproled-pixel-shift.service";
                 };
+            };
 
-                Install = {
-                    WantedBy = ["timers.target"];
+            systemd.user.services.hyproled-scheduler-sync = {
+                Unit = {
+                    Description = "Synchronize the hyproled timer with active effects";
+                };
+
+                Service = {
+                    Type = "oneshot";
+                    ExecStart = "${schedulerSync}";
                 };
             };
+
+            systemd.user.paths.hyproled-scheduler = {
+                Unit = {
+                    Description = "Watch hyproled runtime state for scheduler changes";
+                };
+
+                Path = {
+                    PathChanged = "%t/hyproled";
+                    MakeDirectory = true;
+                    DirectoryMode = "0700";
+                    Unit = "hyproled-scheduler-sync.service";
+                };
+
+                Install = {
+                    WantedBy = ["default.target"];
+                };
+            };
+
+            # Reconcile immediately when Home Manager is switched in a running
+            # Hyprland session, even if the runtime state did not change.
+            home.activation.hyproledSchedulerSync = lib.hm.dag.entryAfter ["reloadSystemd"] ''
+                if [[ -n "''${HYPRLAND_INSTANCE_SIGNATURE:-}" &&
+                      -n "''${XDG_RUNTIME_DIR:-}" &&
+                      -S "$XDG_RUNTIME_DIR/bus" ]]; then
+                    $DRY_RUN_CMD ${pkgs.systemd}/bin/systemctl --user start hyproled-scheduler-sync.service
+                fi
+            '';
         })
     ];
 }
