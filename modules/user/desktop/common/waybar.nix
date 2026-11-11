@@ -236,10 +236,14 @@ in {
             };
 
             style = lib.mkAfter (
-                lib.replaceStrings
-                ["@HYPROLED_ICON_DIR@"]
-                ["${hyproledPackage}/share/hyproled/icons"]
-                (builtins.readFile ./waybar.css)
+                let
+                    waybarCss = builtins.readFile ./waybar.css;
+                    hyproledCss = builtins.readFile "${inputs.hyproled}/assets/waybar-icons.css";
+                in
+                    lib.replaceStrings
+                    ["@HYPROLED_ICON_DIR@"]
+                    ["${hyproledPackage}/share/hyproled/icons"]
+                    (waybarCss + "\n" + hyproledCss)
             );
         };
 
