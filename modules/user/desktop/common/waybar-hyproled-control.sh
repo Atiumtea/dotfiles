@@ -131,7 +131,7 @@ while true; do
 
         options=(
             "$pixel_shift_toggle"
-            "<b>Advance all active effects now</b>"
+            "<b>Advance all effects</b>"
             "Fixed"
             "Orbit 2x2 (default)"
             "Orbit 3x3"
@@ -156,7 +156,7 @@ while true; do
 
         options=(
             "$mask_toggle"
-            "<b>Advance all active effects now</b>"
+            "<b>Advance all effects</b>"
             "1 pixel disabled"
             "2 pixels disabled"
             "3 pixels disabled"

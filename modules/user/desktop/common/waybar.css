@@ -287,17 +287,11 @@ window#waybar.empty #window {
 #custom-hyproled.disabled {
   color: @base04;
   border-bottom-color: @base03;
-  background-image: -gtk-recolor(
-    url("@HYPROLED_ICON_DIR@/hyproled-off.svg"),
-    success @base0D, warning @base04, error @base08
-  );
+  background-image: url("@HYPROLED_ICON_DIR@/hyproled-off.svg");
 }
 
 #custom-hyproled.error {
   color: @base08;
   border-bottom-color: @base08;
-  background-image: -gtk-recolor(
-    url("@HYPROLED_ICON_DIR@/hyproled-error.svg"),
-    success @base0D, warning @base04, error @base08
-  );
+  background-image: url("@HYPROLED_ICON_DIR@/hyproled-error.svg");
 }

@@ -10,6 +10,33 @@
         inherit inputs lib pkgs;
     };
 
+    # Resolve the symbolic SVG colors from the active Stylix palette at build time.
+    # Waybar's background-image rendering is kept independent of GTK recoloring.
+    hyproledWaybarIcons = pkgs.runCommand "hyproled-waybar-icons" {
+        nativeBuildInputs = [pkgs.gnused pkgs.gnugrep pkgs.findutils pkgs.coreutils];
+    } ''
+        mkdir -p "$out"
+        for icon in "${hyproledPackage}/share/hyproled/icons/"*.svg; do
+            name="$(basename "$icon")"
+            sed \
+                -e 's/class="success"/fill="#${config.lib.stylix.colors.base0D}"/g' \
+                -e 's/class="warning"/fill="#${config.lib.stylix.colors.base04}"/g' \
+                -e 's/class="error"/fill="#${config.lib.stylix.colors.base08}"/g' \
+                "$icon" > "$out/$name"
+        done
+
+        icon_count="$(find "$out" -maxdepth 1 -type f -name '*.svg' | wc -l)"
+        if [ "$icon_count" -ne 119 ]; then
+            echo "expected 119 themed SVGs, got $icon_count" >&2
+            exit 1
+        fi
+
+        if grep -q 'class="' "$out"/*.svg; then
+            echo "unconverted symbolic SVG class remains" >&2
+            exit 1
+        fi
+    '';
+
     hyproledControl = pkgs.writeShellApplication {
         name = "hyproled-waybar-control";
         runtimeInputs = [
@@ -242,7 +269,7 @@ in {
                 in
                     lib.replaceStrings
                     ["@HYPROLED_ICON_DIR@"]
-                    ["${hyproledPackage}/share/hyproled/icons"]
+                    ["${hyproledWaybarIcons}"]
                     (waybarCss + "\n" + hyproledCss)
             );
         };
