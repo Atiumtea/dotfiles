@@ -87,14 +87,14 @@
         nix-firefox-addons.url = "github:osipog/nix-firefox-addons";
 
         home-manager = {
-            url = "github:nix-community/home-manager/release-26.05";
+            url = "github:nix-community/home-manager";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         stylix = {
-            url = "github:nix-community/stylix/release-26.05";
+            url = "github:nix-community/stylix";
             inputs.nixpkgs.follows = "nixpkgs";
         };
-        nixvim.url = "github:nix-community/nixvim/nixos-26.05";
+        nixvim.url = "github:nix-community/nixvim";
         niri = {
             url = "github:sodiboo/niri-flake";
             inputs.nixpkgs.follows = "nixpkgs";
@@ -123,7 +123,6 @@
             inputs.nixpkgs.follows = "nixpkgs";
         };
         nix-flatpak.url = "github:gmodena/nix-flatpak/?ref=v0.8.0";
-
         hyproled = {
             url = "github:Atiumtea/hyproled?ref=feature/pixel-shift";
             flake = false;
