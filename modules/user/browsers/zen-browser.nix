@@ -39,8 +39,10 @@
 
         home.sessionVariables.BROWSER = lib.mkForce "zen-beta";
 
-        wayland.windowManager.hyprland.settings."$browser" =
-            lib.mkIf osConfig.hostSettings.desktop.hyprland.enable
-            (lib.mkForce "zen-beta");
+        wayland.windowManager.hyprland.settings."$browser" = lib.mkIf (
+            osConfig.hostSettings.desktop.hyprland.enable
+            && config.wayland.windowManager.hyprland.configType == "hyprlang"
+        )
+        (lib.mkForce "zen-beta");
     };
 }
