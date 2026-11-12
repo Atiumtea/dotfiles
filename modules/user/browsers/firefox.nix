@@ -24,7 +24,7 @@ in {
     config = lib.mkIf config.userSettings.browsers.firefox.enable {
         programs.firefox = {
             inherit package;
-
+            configPath = ".mozilla/firefox";
             enable = true;
             profiles.default = {
                 isDefault = true;
