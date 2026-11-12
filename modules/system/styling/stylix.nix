@@ -29,6 +29,7 @@ in {
     config = lib.mkIf config.hostSettings.styling.enable {
         stylix = {
             enable = true;
+            targets.kmscon.enable = false;
             polarity = theme.polarity;
             image =
                 if lib.isPath theme.background
