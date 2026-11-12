@@ -1,3 +1,4 @@
+
 {
     config,
     osConfig,
@@ -9,25 +10,11 @@
             enable = true;
             package = null;
             portalPackage = null;
-            settings = {
-                "$browser" = "${config.userSettings.browsers.defaultBrowser}";
-                "$terminal" = "${config.userSettings.terminals.defaultTerminal}";
-                "$fileManager" = "${config.userSettings.terminals.defaultTerminal} --class yazi -- yazi";
-                "$menu" = "rofi -show drun -theme ${config.xdg.configHome}/rofi/launcher.rasi";
+            configType = "lua";
+            xwayland.enable = true;
 
-                exec-once = [
-                    "waybar"
-                    "hyproled --restore"
-                    "hyprctl setcursor ${config.userSettings.styling.cursor.name} ${toString config.userSettings.styling.cursor.size}"
-                    "[workspace 1 silent] $browser"
-                    "[workspace 2 silent] $terminal"
-                ];
-
-                env = [
-                    "XDG_CURRENT_DESKTOP=Hyprland"
-                    "XDG_SESSION_DESKTOP=Hyprland"
-                ];
-
+            # The settings are generated as hl.config() calls.
+            settings.config = {
                 general = {
                     gaps_in = 5;
                     gaps_out = 8;
@@ -39,11 +26,9 @@
                     layout = "dwindle";
                 };
 
-                # Pixel Shift requires full-monitor redraws.
+                # Pixel Shift requires monitor-level redraws.
                 # Partial damage leaves stale pixels after texture shifting.
-                debug = {
-                    damage_tracking = 1;
-                };
+                debug.damage_tracking = 1;
 
                 decoration = {
                     rounding = 10;
@@ -70,37 +55,6 @@
 
                         vibrancy = 0.1696;
                     };
-                };
-
-                animations = {
-                    enabled = true;
-
-                    bezier = [
-                        "easeOutQuint,0.23,1,0.32,1"
-                        "easeInOutCubic,0.65,0.05,0.36,1"
-                        "linear,0,0,1,1"
-                        "almostLinear,0.5,0.5,0.75,1.0"
-                        "quick,0.15,0,0.1,1"
-                    ];
-
-                    animation = [
-                        "global, 1, 10, default"
-                        "border, 1, 5.39, easeOutQuint"
-                        "windows, 1, 4.79, easeOutQuint"
-                        "windowsIn, 1, 4.1, easeOutQuint, popin 87%"
-                        "windowsOut, 1, 1.49, linear, popin 87%"
-                        "fadeIn, 1, 1.73, almostLinear"
-                        "fadeOut, 1, 1.46, almostLinear"
-                        "fade, 1, 3.03, quick"
-                        "layers, 1, 3.81, easeOutQuint"
-                        "layersIn, 1, 4, easeOutQuint, fade"
-                        "layersOut, 1, 1.5, linear, fade"
-                        "fadeLayersIn, 1, 1.79, almostLinear"
-                        "fadeLayersOut, 1, 1.39, almostLinear"
-                        "workspaces, 1, 1.94, almostLinear, fade"
-                        "workspacesIn, 1, 1.21, almostLinear, fade"
-                        "workspacesOut, 1, 1.94, almostLinear, fade"
-                    ];
                 };
 
                 dwindle = {
@@ -141,132 +95,291 @@
                         natural_scroll = true;
                     };
                 };
-
-                windowrule = [
-                    # ignore maximize requests from apps
-                    "suppress_event maximize, match:class *"
-
-                    # xix some dragging issues with XWayland
-                    "no_focus on, match:class ^$ match title ^$ match:xwayland 1 match:floating 1 match:fullscreen 0 match:pinned 0"
-
-                    # make satty look better
-                    "float on, dim_around on, min_size 700 500, center on, match:class ^com.gabm.satty$"
-
-                    # rmpc & cava
-                    "float on, size (monitor_w*0.6) (monitor_h*0.5), center on, match:class ^rmpc$"
-                    "float on, size (monitor_w*0.3) (monitor_h*0.2), center on, match:class ^cava$"
-                    "float on, size (monitor_w*0.8) (monitor_h*0.8), center on, match:class ^yazi$"
-                ];
-
-                "$mainMod" = "SUPER";
-
-                bind = [
-                    "$mainMod, Q, exec, $terminal"
-                    "$mainMod, C, killactive,"
-                    "$mainMod, M, exit,"
-                    "$mainMod, E, exec, $fileManager"
-                    "$mainMod, F, togglefloating,"
-                    "$mainMod, R, exec, $menu"
-
-                    # switch workspaces with mainMod + [0-9]
-                    "$mainMod, 1, workspace, 1"
-                    "$mainMod, 2, workspace, 2"
-                    "$mainMod, 3, workspace, 3"
-                    "$mainMod, 4, workspace, 4"
-                    "$mainMod, 5, workspace, 5"
-                    "$mainMod, 6, workspace, 6"
-                    "$mainMod, 7, workspace, 7"
-                    "$mainMod, 8, workspace, 8"
-                    "$mainMod, 9, workspace, 9"
-                    "$mainMod, 0, workspace, 10"
-
-                    # move active window to a workspace with mainMod + SHIFT + [0-9]
-                    "$mainMod SHIFT, 1, movetoworkspacesilent, 1"
-                    "$mainMod SHIFT, 2, movetoworkspacesilent, 2"
-                    "$mainMod SHIFT, 3, movetoworkspacesilent, 3"
-                    "$mainMod SHIFT, 4, movetoworkspacesilent, 4"
-                    "$mainMod SHIFT, 5, movetoworkspacesilent, 5"
-                    "$mainMod SHIFT, 6, movetoworkspacesilent, 6"
-                    "$mainMod SHIFT, 7, movetoworkspacesilent, 7"
-                    "$mainMod SHIFT, 8, movetoworkspacesilent, 8"
-                    "$mainMod SHIFT, 9, movetoworkspacesilent, 9"
-                    "$mainMod SHIFT, 0, movetoworkspacesilent, 10"
-
-                    # special workspace (scratchpad)
-                    "$mainMod, S, togglespecialworkspace, magic"
-                    "$mainMod SHIFT, S, movetoworkspace, special:magic"
-
-                    # scroll through existing workspaces with mainMod + scroll
-                    "$mainMod, mouse_down, workspace, e+1"
-                    "$mainMod, mouse_up, workspace, e-1"
-
-                    # custom
-
-                    # move windows with J, K (left, right) and Shift+J, K (down, up)
-                    "$mainMod, J, movewindow, l"
-                    "$mainMod, K, movewindow, r"
-                    "$mainMod SHIFT, J, movewindow, d"
-                    "$mainMod SHIFT, K, movewindow, u"
-
-                    # power menu
-                    "$mainMod, KP_ENTER, exec, ${config.xdg.configHome}/rofi/powermenu.sh"
-
-                    # screenshot
-                    # just select
-                    ", PRINT, exec, grimblast -n -f copy area"
-                    "$mainMod, PRINT, exec, grimblast -n -f save area ~/\${date '+%Y-%m-%d_%H:%M:%S'}.png"
-
-                    # do stuff
-                    "SHIFT, PRINT, exec, GRIMBLAST_EDITOR=\"satty --copy-command wl-copy --actions-on-enter save-to-clipboard,exit --filename \" grimblast -f edit area"
-
-                    # full screen
-                    "ALT, PRINT, exec, grimblast -n -f copy screen"
-                    "$mainMod + ALT, PRINT, exec, grimblast -n -f save screen ~/\$(date '+%Y-%m-%d_%H:%M:%S').png"
-
-                    # lock
-                    "$mainMod, L, exec, hyprlock"
-
-                    # keyboard backlight toggle
-                    "$mainMod, F5, exec, kbtoggle"
-
-                    # music
-                    "$mainMod, N, exec, $terminal --class rmpc -- rmpc"
-                    "$mainMod SHIFT, N, exec, $terminal --class cava -- cava"
-                ];
-
-                bindm = [
-                    # move/resize windows with mainMod + LMB/RMB and dragging
-                    "$mainMod, mouse:272, movewindow"
-                    "$mainMod, mouse:273, resizewindow"
-                ];
-
-                bindel = [
-                    # laptop multimedia keys for volume and LCD brightness
-                    ",XF86AudioRaiseVolume, exec, wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"
-                    ",XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
-                    ",XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-                    ",XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
-                    ",XF86MonBrightnessUp, exec, brightnessctl s 10%+"
-                    ",XF86MonBrightnessDown, exec, brightnessctl s 10%-"
-
-                    # keyboard backlight
-                    ",XF86KbdBrightnessUp, exec, brightnessctl -d tpacpi::kbd_backlight set 100%"
-                    ",XF86KbdBrightnessDown, exec, brightnessctl -d tpacpi::kbd_backlight set 0%"
-                ];
-
-                bindl = [
-                    ", XF86AudioNext, exec, playerctl next"
-                    ", XF86AudioPause, exec, playerctl play-pause"
-                    ", XF86AudioPlay, exec, playerctl play-pause"
-                    ", XF86AudioPrev, exec, playerctl previous"
-                ];
-
-                layerrule = [
-                    "blur on, match:namespace rofi"
-                ];
             };
 
-            xwayland.enable = true;
+            extraConfig = ''
+                -- Programs
+                local browser = ${builtins.toJSON config.userSettings.browsers.defaultBrowser}
+                local terminal = ${builtins.toJSON config.userSettings.terminals.defaultTerminal}
+                local fileManager = terminal .. " --class yazi -- yazi"
+                local menu = ${builtins.toJSON "rofi -show drun -theme ${config.xdg.configHome}/rofi/launcher.rasi"}
+                local powerMenu = ${builtins.toJSON "${config.xdg.configHome}/rofi/powermenu.sh"}
+                local setCursor = ${builtins.toJSON "hyprctl setcursor ${config.userSettings.styling.cursor.name} ${toString config.userSettings.styling.cursor.size}"}
+
+                local mainMod = "SUPER"
+
+                -- Environment
+                hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
+                hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+
+                -- Animation curves
+                hl.curve("easeOutQuint", {
+                    type = "bezier",
+                    points = { { 0.23, 1 }, { 0.32, 1 } },
+                })
+
+                hl.curve("easeInOutCubic", {
+                    type = "bezier",
+                    points = { { 0.65, 0.05 }, { 0.36, 1 } },
+                })
+
+                hl.curve("linear", {
+                    type = "bezier",
+                    points = { { 0, 0 }, { 1, 1 } },
+                })
+
+                hl.curve("almostLinear", {
+                    type = "bezier",
+                    points = { { 0.5, 0.5 }, { 0.75, 1 } },
+                })
+
+                hl.curve("quick", {
+                    type = "bezier",
+                    points = { { 0.15, 0 }, { 0.1, 1 } },
+                })
+
+                -- Animations
+                hl.animation({ leaf = "global", enabled = true, speed = 10, bezier = "default" })
+                hl.animation({ leaf = "border", enabled = true, speed = 5.39, bezier = "easeOutQuint" })
+                hl.animation({ leaf = "windows", enabled = true, speed = 4.79, bezier = "easeOutQuint" })
+                hl.animation({ leaf = "windowsIn", enabled = true, speed = 4.1, bezier = "easeOutQuint", style = "popin 87%" })
+                hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.49, bezier = "linear", style = "popin 87%" })
+                hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.73, bezier = "almostLinear" })
+                hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.46, bezier = "almostLinear" })
+                hl.animation({ leaf = "fade", enabled = true, speed = 3.03, bezier = "quick" })
+                hl.animation({ leaf = "layers", enabled = true, speed = 3.81, bezier = "easeOutQuint" })
+                hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "easeOutQuint", style = "fade" })
+                hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "linear", style = "fade" })
+                hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 1.79, bezier = "almostLinear" })
+                hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.39, bezier = "almostLinear" })
+                hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
+                hl.animation({ leaf = "workspacesIn", enabled = true, speed = 1.21, bezier = "almostLinear", style = "fade" })
+                hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
+
+                -- Autostart
+                hl.on("hyprland.start", function()
+                    hl.exec_cmd("waybar")
+                    hl.exec_cmd("hyproled --restore")
+                    hl.exec_cmd(setCursor)
+
+                    hl.exec_cmd(browser, { workspace = "1 silent" })
+                    hl.exec_cmd(terminal, { workspace = "2 silent" })
+                end)
+
+                -- Keybindings
+                hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
+                hl.bind(mainMod .. " + C", hl.dsp.window.close())
+                hl.bind(mainMod .. " + M", hl.dsp.exit())
+                hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
+                hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
+                hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
+
+                -- Switch workspaces with mainMod + [0-9].
+                -- Move active windows silently with mainMod + SHIFT + [0-9].
+                for i = 1, 10 do
+                    local key = i % 10
+
+                    hl.bind(mainMod .. " + " .. key,
+                        hl.dsp.focus({ workspace = i }))
+
+                    hl.bind(mainMod .. " + SHIFT + " .. key,
+                        hl.dsp.window.move({ workspace = i, follow = false }))
+                end
+
+                -- Special workspace (scratchpad).
+                hl.bind(mainMod .. " + S",
+                    hl.dsp.workspace.toggle_special("magic"))
+
+                hl.bind(mainMod .. " + SHIFT + S",
+                    hl.dsp.window.move({ workspace = "special:magic" }))
+
+                -- Scroll through existing workspaces.
+                hl.bind(mainMod .. " + mouse_down",
+                    hl.dsp.focus({ workspace = "e+1" }))
+
+                hl.bind(mainMod .. " + mouse_up",
+                    hl.dsp.focus({ workspace = "e-1" }))
+
+                -- Move windows with J/K and Shift+J/K.
+                hl.bind(mainMod .. " + J",
+                    hl.dsp.window.move({ direction = "left" }))
+
+                hl.bind(mainMod .. " + K",
+                    hl.dsp.window.move({ direction = "right" }))
+
+                hl.bind(mainMod .. " + SHIFT + J",
+                    hl.dsp.window.move({ direction = "down" }))
+
+                hl.bind(mainMod .. " + SHIFT + K",
+                    hl.dsp.window.move({ direction = "up" }))
+
+                -- Power menu
+                hl.bind(mainMod .. " + KP_ENTER",
+                    hl.dsp.exec_cmd(powerMenu))
+
+                -- Screenshots
+                local saveArea =
+                    "grimblast -n -f save area \"$HOME/$(date '+%Y-%m-%d_%H:%M:%S').png\""
+
+                local saveScreen =
+                    "grimblast -n -f save screen \"$HOME/$(date '+%Y-%m-%d_%H:%M:%S').png\""
+
+                local editArea =
+                    'GRIMBLAST_EDITOR="satty --copy-command wl-copy --actions-on-enter save-to-clipboard,exit --filename " grimblast -f edit area'
+
+                hl.bind("PRINT",
+                    hl.dsp.exec_cmd("grimblast -n -f copy area"))
+
+                hl.bind(mainMod .. " + PRINT",
+                    hl.dsp.exec_cmd(saveArea))
+
+                hl.bind("SHIFT + PRINT",
+                    hl.dsp.exec_cmd(editArea))
+
+                hl.bind("ALT + PRINT",
+                    hl.dsp.exec_cmd("grimblast -n -f copy screen"))
+
+                hl.bind(mainMod .. " + ALT + PRINT",
+                    hl.dsp.exec_cmd(saveScreen))
+
+                -- Lock screen
+                hl.bind(mainMod .. " + L",
+                    hl.dsp.exec_cmd("hyprlock"))
+
+                -- Keyboard backlight toggle
+                hl.bind(mainMod .. " + F5",
+                    hl.dsp.exec_cmd("kbtoggle"))
+
+                -- Music
+                hl.bind(mainMod .. " + N",
+                    hl.dsp.exec_cmd(terminal .. " --class rmpc -- rmpc"))
+
+                hl.bind(mainMod .. " + SHIFT + N",
+                    hl.dsp.exec_cmd(terminal .. " --class cava -- cava"))
+
+                -- Mouse movement and resizing
+                hl.bind(mainMod .. " + mouse:272",
+                    hl.dsp.window.drag(), { mouse = true })
+
+                hl.bind(mainMod .. " + mouse:273",
+                    hl.dsp.window.resize(), { mouse = true })
+
+                -- Multimedia keys
+                hl.bind("XF86AudioRaiseVolume",
+                    hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"),
+                    { locked = true, repeating = true })
+
+                hl.bind("XF86AudioLowerVolume",
+                    hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),
+                    { locked = true, repeating = true })
+
+                hl.bind("XF86AudioMute",
+                    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),
+                    { locked = true, repeating = true })
+
+                hl.bind("XF86AudioMicMute",
+                    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),
+                    { locked = true, repeating = true })
+
+                hl.bind("XF86MonBrightnessUp",
+                    hl.dsp.exec_cmd("brightnessctl s 10%+"),
+                    { locked = true, repeating = true })
+
+                hl.bind("XF86MonBrightnessDown",
+                    hl.dsp.exec_cmd("brightnessctl s 10%-"),
+                    { locked = true, repeating = true })
+
+                -- Keyboard backlight
+                hl.bind("XF86KbdBrightnessUp",
+                    hl.dsp.exec_cmd("brightnessctl -d tpacpi::kbd_backlight set 100%"),
+                    { locked = true, repeating = true })
+
+                hl.bind("XF86KbdBrightnessDown",
+                    hl.dsp.exec_cmd("brightnessctl -d tpacpi::kbd_backlight set 0%"),
+                    { locked = true, repeating = true })
+
+                -- Media keys
+                hl.bind("XF86AudioNext",
+                    hl.dsp.exec_cmd("playerctl next"),
+                    { locked = true })
+
+                hl.bind("XF86AudioPause",
+                    hl.dsp.exec_cmd("playerctl play-pause"),
+                    { locked = true })
+
+                hl.bind("XF86AudioPlay",
+                    hl.dsp.exec_cmd("playerctl play-pause"),
+                    { locked = true })
+
+                hl.bind("XF86AudioPrev",
+                    hl.dsp.exec_cmd("playerctl previous"),
+                    { locked = true })
+
+                -- Window rules
+                hl.window_rule({
+                    name = "suppress-maximize-events",
+                    match = { class = ".*" },
+                    suppress_event = "maximize",
+                })
+
+                -- Fix some dragging issues with XWayland.
+                hl.window_rule({
+                    name = "xwayland-empty-floating-no-focus",
+                    match = {
+                        class = "^$",
+                        title = "^$",
+                        xwayland = true,
+                        float = true,
+                        fullscreen = false,
+                        pin = false,
+                    },
+                    no_focus = true,
+                })
+
+                -- Satty
+                hl.window_rule({
+                    name = "satty",
+                    match = { class = "^com.gabm.satty$" },
+                    float = true,
+                    dim_around = true,
+                    min_size = { 700, 500 },
+                    center = true,
+                })
+
+                -- rmpc
+                hl.window_rule({
+                    name = "rmpc",
+                    match = { class = "^rmpc$" },
+                    float = true,
+                    size = { "monitor_w*0.6", "monitor_h*0.5" },
+                    center = true,
+                })
+
+                -- cava
+                hl.window_rule({
+                    name = "cava",
+                    match = { class = "^cava$" },
+                    float = true,
+                    size = { "monitor_w*0.3", "monitor_h*0.2" },
+                    center = true,
+                })
+
+                -- yazi
+                hl.window_rule({
+                    name = "yazi",
+                    match = { class = "^yazi$" },
+                    float = true,
+                    size = { "monitor_w*0.8", "monitor_h*0.8" },
+                    center = true,
+                })
+
+                -- Layer rules
+                hl.layer_rule({
+                    name = "blur-rofi",
+                    match = { namespace = "^rofi$" },
+                    blur = true,
+                })
+            '';
         };
     };
 }

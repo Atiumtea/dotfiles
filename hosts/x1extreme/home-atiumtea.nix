@@ -51,10 +51,10 @@
             LIBVIRT_DEFAULT_URI = "qemu:///system";
         };
 
-        wayland.windowManager.hyprland.settings.input.kb_layout =
+        wayland.windowManager.hyprland.settings.config.input.kb_layout =
             lib.mkForce "us,ru";
 
-        wayland.windowManager.hyprland.settings.input.kb_options =
+        wayland.windowManager.hyprland.settings.config.input.kb_options =
             lib.mkForce "grp:win_space_toggle";
 
         programs = {

@@ -243,25 +243,28 @@ apply_via_nh() {
 
   # ─── Tagging Logic ──────────────────────────────────────────────────────────
   if [[ "$action" == "switch" || "$action" == "boot" ]]; then
-    local new_gen
-    new_gen=$(get_generation)
+          local branch_name tag_name tag_message
 
-    if [[ -z "$new_gen" ]]; then
-      echo -e "\nWARNING: Could not determine the new generation number. Skipping tag creation." >&2
-    elif [[ "$new_gen" == "$old_gen" ]]; then
-      echo -e "\nNo new generation was created (stayed at gen-$old_gen). Skipping tag." >&2
-    elif [[ "$FORCE_BUILD" == true ]]; then
-      echo -e "\nWARNING: Skipping tag creation because the build was forced on a dirty tree." >&2
-    else
-      local tag_name="gen-${new_gen}"
-      if git rev-parse "$tag_name" >/dev/null 2>&1; then
+      branch_name="$(git branch --show-current)"
+
+      if [[ "$branch_name" == "main" ]]; then
+        tag_name="gen-${new_gen}"
+        tag_message="NixOS Generation ${new_gen}"
+      else
+        tag_name="gen-${new_gen}-exp"
+        tag_message="Experimental NixOS Generation ${new_gen}"
+      fi
+
+      if git show-ref --verify --quiet "refs/tags/${tag_name}"; then
         echo -e "\nWARNING: Tag '$tag_name' already exists. Skipping." >&2
       else
-        echo -e "\n📦 Creating Git tag for this generation..."
-        if git tag -a "$tag_name" -m "NixOS Generation $new_gen (Git: $(git rev-parse --short HEAD))"; then
-          echo "✅ Successfully created tag: $tag_name"
-          echo "   To view this tag later, run: git show $tag_name"
-          echo "   To push tags to remote: git push --tags"
+        echo -e "\n Creating Git tag for this generation..."
+        if git tag -a "$tag_name" \
+            -m "${tag_message} (Git: $(git rev-parse --short HEAD))"; then
+          echo "Successfully created tag: $tag_name"
+          echo "To view this tag later, run: git show $tag_name"
+          echo "To push this tag later, run:"
+          echo "git push origin refs/tags/$tag_name"
         else
           echo "WARNING: Failed to create tag '$tag_name'." >&2
         fi

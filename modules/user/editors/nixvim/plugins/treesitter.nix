@@ -1,21 +1,20 @@
+
 {
     config,
     lib,
-    pkgs,
     ...
 }: {
     config.programs.nixvim = lib.mkIf config.userSettings.nixvim.enable {
-        plugins = {
-            treesitter = {
-                enable = true;
-                nixvimInjections = true;
-                settings = {
-                    highlight.enable = true;
-                    indent.enable = true;
-                    folding.enable = true;
-                    autotag.enable = true;
-                };
-                grammarPackages = with pkgs.vimPlugins.nvim-treesitter.builtGrammars; [
+        plugins.treesitter = {
+            enable = true;
+            nixvimInjections = true;
+
+            highlight.enable = true;
+            indent.enable = true;
+            folding.enable = true;
+
+            grammarPackages =
+                with config.programs.nixvim.plugins.treesitter.package.builtGrammars; [
                     c
                     cpp
                     lua
@@ -62,7 +61,6 @@
                     git-rebase
                     gitcommit
                 ];
-            };
         };
     };
 }
