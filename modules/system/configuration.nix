@@ -102,7 +102,6 @@
                     efiSysMountPoint = "/boot";
                 };
             };
-            initrd.systemd.enable = true;
         };
 
         networking = {

@@ -25,11 +25,6 @@ in {
 
     config = lib.mkIf (config.hostSettings.styling.enable && config.hostSettings.styling.plymouth.enable) {
         boot = {
-            # quiet boot
-            initrd = {
-                verbose = false;
-            };
-
             kernelParams = [
                 "quiet"
                 "splash"
