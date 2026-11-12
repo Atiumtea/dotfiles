@@ -63,11 +63,11 @@
                     plugins = true;
                 };
                 combinePlugins = {
-                    enable = true;
-                    standalonePlugins = [
-                        "oil.nvim"
-                        "nvim-treesitter"
-                    ];
+                    enable = false;
+                    # standalonePlugins = [
+                    #     "oil.nvim"
+                    #     "nvim-treesitter"
+                    # ];
                 };
             };
         };
