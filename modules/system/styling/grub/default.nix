@@ -24,9 +24,10 @@ in {
     };
 
     config = lib.mkIf config.hostSettings.styling.enable {
-        environment.systemPackages = lib.optional
-        (theme != "stylix")
-        themePackage;
+        environment.systemPackages =
+            lib.optional
+            (theme != "stylix")
+            themePackage;
 
         boot.loader.grub = lib.mkIf (theme != "stylix") {
             theme = "${themePackage}/share/grub/themes/${theme}";
