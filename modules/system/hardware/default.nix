@@ -1,4 +1,8 @@
-{...}: {
+{
+    config,
+    lib,
+    ...
+}: {
     imports = [
         ./graphics
 
@@ -7,7 +11,13 @@
         ./uinput.nix
     ];
 
-    config = {
-        hardware.enableAllFirmware = true;
-    };
+    config = lib.mkMerge [
+        {
+            hardware.enableAllFirmware = true;
+        }
+
+        (lib.mkIf config.services.throttled.enable {
+            services.upower.enable = true;
+        })
+    ];
 }
