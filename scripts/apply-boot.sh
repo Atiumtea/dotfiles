@@ -243,10 +243,18 @@ apply_via_nh() {
 
   # ─── Tagging Logic ──────────────────────────────────────────────────────────
   if [[ "$action" == "switch" || "$action" == "boot" ]]; then
-          local branch_name tag_name tag_message
+    local new_gen branch_name tag_name tag_message
 
-      branch_name="$(git branch --show-current)"
+    new_gen="$(get_generation)"
+    branch_name="$(git branch --show-current)"
 
+    if [[ -z "$new_gen" ]]; then
+      echo -e "\nWARNING: Could not determine the new generation number. Skipping tag creation." >&2
+    elif [[ "$new_gen" == "$old_gen" ]]; then
+      echo -e "\nNo new generation was created (stayed at gen-$old_gen). Skipping tag." >&2
+    elif [[ "$FORCE_BUILD" == true ]]; then
+      echo -e "\nWARNING: Skipping tag creation because the build was forced on a dirty tree." >&2
+    else
       if [[ "$branch_name" == "main" ]]; then
         tag_name="gen-${new_gen}"
         tag_message="NixOS Generation ${new_gen}"
@@ -258,9 +266,8 @@ apply_via_nh() {
       if git show-ref --verify --quiet "refs/tags/${tag_name}"; then
         echo -e "\nWARNING: Tag '$tag_name' already exists. Skipping." >&2
       else
-        echo -e "\n Creating Git tag for this generation..."
-        if git tag -a "$tag_name" \
-            -m "${tag_message} (Git: $(git rev-parse --short HEAD))"; then
+        echo -e "\nCreating Git tag for this generation..."
+        if git tag -a "$tag_name" -m "$tag_message"; then
           echo "Successfully created tag: $tag_name"
           echo "To view this tag later, run: git show $tag_name"
           echo "To push this tag later, run:"
@@ -279,7 +286,7 @@ apply_via_nh() {
   fi
 }
 
-# ─── Update flake inputs ──────────────────────────────────────────────────────
+# ──u─ Update flake inputs ──────────────────────────────────────────────────────
 update_inputs() {
   echo "Updating flake inputs ..."
   if ! run_logged nix flake update "$DOTFILES"; then
