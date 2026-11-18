@@ -60,6 +60,12 @@ in {
             settings = {
                 mainBar = {
                     layer = "top";
+                    start_hidden = false;
+
+                    on-sigusr1 =
+                        if config.userSettings.waybar.toggle.enable
+                        then "toggle"
+                        else "noop";
                     margin-top = 4;
                     margin-right = 4;
                     margin-bottom = 0;

@@ -19,6 +19,8 @@
                 interval = "15min";
             };
 
+            waybar.toggle.enable = true;
+
             vscode.enable = true;
             obsidian.enable = true;
 

@@ -2,8 +2,17 @@
     config,
     osConfig,
     lib,
+    pkgs,
     ...
-}: {
+}: let
+    waybarToggleBinding = lib.optionalString config.userSettings.waybar.toggle.enable ''
+        hl.bind(mainMod .. " + H",
+            hl.dsp.exec_cmd("${pkgs.procps}/bin/pkill -USR1 -x waybar"))
+    '';
+in {
+    options.userSettings.waybar.toggle.enable =
+        lib.mkEnableOption "Waybar visibility toggle";
+
     config = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {
         wayland.windowManager.hyprland = {
             enable = true;
@@ -166,6 +175,7 @@
                 end)
 
                 -- Keybindings
+                ${waybarToggleBinding}
                 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
                 hl.bind(mainMod .. " + C", hl.dsp.window.close())
                 hl.bind(mainMod .. " + M", hl.dsp.exit())
