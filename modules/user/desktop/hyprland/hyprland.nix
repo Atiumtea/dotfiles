@@ -98,7 +98,7 @@
 
             extraConfig = ''
                 -- Programs
-                local browser = ${builtins.toJSON config.userSettings.browsers.defaultBrowser}
+                local browser = ${builtins.toJSON config.home.sessionVariables.BROWSER}
                 local terminal = ${builtins.toJSON config.userSettings.terminals.defaultTerminal}
                 local fileManager = terminal .. " --class yazi -- yazi"
                 local menu = ${builtins.toJSON "rofi -show drun -theme ${config.xdg.configHome}/rofi/launcher.rasi"}
