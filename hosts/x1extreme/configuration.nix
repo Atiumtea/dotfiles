@@ -96,6 +96,7 @@
             # Bottles - Windows application and game launcher.
             packages = [
                 "com.usebottles.bottles"
+                "org.freedesktop.Platform.VulkanLayer.MangoHud//25.08"
             ];
 
             # Allow Bottles to access the Isaac game directory,
