@@ -279,13 +279,17 @@
       }
     },
     "hyproled": {
-      "flake": false,
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
       "locked": {
-        "lastModified": 1794436130,
-        "narHash": "sha256-iX/q+h1jBJcPwnBdOB9DAw35vu+SNJFKLNeJPNAbbSA=",
+        "lastModified": 1795124646,
+        "narHash": "sha256-IveWHJdVGVhiseDhcS0md06AVu5Z1PvWrCEzNj+AtCE=",
         "owner": "Atiumtea",
         "repo": "hyproled",
-        "rev": "f7f28375172a489a71cbd61ab52a0681a96159d5",
+        "rev": "188efb64f208ae8f1562ff4e62481087e5ef72cc",
         "type": "github"
       },
       "original": {
