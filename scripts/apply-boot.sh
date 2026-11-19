@@ -159,7 +159,9 @@ cmd_check() {
 
   echo
   echo "Running nix flake check ..."
-  run_logged nix flake check "$DOTFILES" --no-build --show-trace
+  # Avoid --no-build: read-only evaluation can fail on missing .drv paths
+  # while checking the NixOS configuration closure.
+  run_logged nix flake check "$DOTFILES" --show-trace
 }
 
 # ─── `diff` ───────────────────────────────────────────────────────────────────
