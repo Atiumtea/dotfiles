@@ -33,28 +33,29 @@ in {
             };
         };
 
-        xdg.configFile."rmpc/themes/mine.ron".text = builtins.replaceStrings
-        [
-            "@base08@"
-            "@base09@"
-            "@base0A@"
-            "@base0B@"
-            "@base0C@"
-            "@base0D@"
-            "@base0E@"
-            "@base06@"
-        ]
-        [
-            "${colors.base08}"
-            "${colors.base09}"
-            "${colors.base0A}"
-            "${colors.base0B}"
-            "${colors.base0C}"
-            "${colors.base0D}"
-            "${colors.base0E}"
-            "${colors.base06}"
-        ]
-        (builtins.readFile ./rmpc-theme.ron);
+        xdg.configFile."rmpc/themes/mine.ron".text =
+            builtins.replaceStrings
+            [
+                "@base08@"
+                "@base09@"
+                "@base0A@"
+                "@base0B@"
+                "@base0C@"
+                "@base0D@"
+                "@base0E@"
+                "@base06@"
+            ]
+            [
+                "${colors.base08}"
+                "${colors.base09}"
+                "${colors.base0A}"
+                "${colors.base0B}"
+                "${colors.base0C}"
+                "${colors.base0D}"
+                "${colors.base0E}"
+                "${colors.base06}"
+            ]
+            (builtins.readFile ./rmpc-theme.ron);
 
         # HACK: can't create directories directly
         home.file.".config/mpd/playlists/.created".text = "";

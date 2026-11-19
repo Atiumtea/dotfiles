@@ -15,25 +15,25 @@
 
     config = lib.mkMerge [
         (lib.mkIf
-        config.hostSettings.virtualization.libvirt.enable
-        {
-            virtualisation.libvirtd = {
-                enable = true;
+            config.hostSettings.virtualization.libvirt.enable
+            {
+                virtualisation.libvirtd = {
+                    enable = true;
 
-                qemu = {
-                    package = pkgs.qemu_kvm;
-                    vhostUserPackages = [pkgs.virtiofsd];
+                    qemu = {
+                        package = pkgs.qemu_kvm;
+                        vhostUserPackages = [pkgs.virtiofsd];
+                    };
                 };
-            };
 
-            virtualisation.spiceUSBRedirection.enable = true;
+                virtualisation.spiceUSBRedirection.enable = true;
 
-            programs.virt-manager.enable = true;
-        })
+                programs.virt-manager.enable = true;
+            })
         (lib.mkIf
-        config.hostSettings.virtualization.docker.enable
-        {
-            virtualisation.docker.enable = true;
-        })
+            config.hostSettings.virtualization.docker.enable
+            {
+                virtualisation.docker.enable = true;
+            })
     ];
 }

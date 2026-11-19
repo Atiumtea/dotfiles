@@ -14,57 +14,57 @@
         ];
     in {
         nixosConfigurations = builtins.listToAttrs (map (host: {
-            name = host;
-            value = lib.nixosSystem {
-                inherit system;
-
-                modules = [
-                    {
-                        nixpkgs = {
-                            config = {allowUnfree = true;};
-                            overlays = [inputs.nix-firefox-addons.overlays.default];
-                        };
-                    }
-
-                    {
-                        nixpkgs.overlays = [
-                            inputs.pi-nix.overlays.default
-                        ];
-                    }
-
-                    # host-specific configuration
-                    {config.networking.hostName = host;}
-                    ./hosts/${host}
-
-                    # common configuration
-                    ./modules/system
-
-                    # Declarative Flatpak application management
-                    inputs.nix-flatpak.nixosModules.nix-flatpak
-
-                    # inputs.sops-nix.nixosModules.sops  # TODO: re-enable when Go 1.26 lands in nixpkgs
-                    inputs.home-manager.nixosModules.home-manager
-                    {
-                        home-manager.useGlobalPkgs = true;
-                        home-manager.useUserPackages = true;
-                        home-manager.backupFileExtension = "hm-backup";
-
-                        home-manager.extraSpecialArgs = {
-                            inherit system;
-                            inherit libM;
-                            inherit inputs;
-                        };
-                    }
-                ];
-
-                specialArgs = {
+                name = host;
+                value = lib.nixosSystem {
                     inherit system;
-                    inherit libM;
-                    inherit inputs;
+
+                    modules = [
+                        {
+                            nixpkgs = {
+                                config = {allowUnfree = true;};
+                                overlays = [inputs.nix-firefox-addons.overlays.default];
+                            };
+                        }
+
+                        {
+                            nixpkgs.overlays = [
+                                inputs.pi-nix.overlays.default
+                            ];
+                        }
+
+                        # host-specific configuration
+                        {config.networking.hostName = host;}
+                        ./hosts/${host}
+
+                        # common configuration
+                        ./modules/system
+
+                        # Declarative Flatpak application management
+                        inputs.nix-flatpak.nixosModules.nix-flatpak
+
+                        # inputs.sops-nix.nixosModules.sops  # TODO: re-enable when Go 1.26 lands in nixpkgs
+                        inputs.home-manager.nixosModules.home-manager
+                        {
+                            home-manager.useGlobalPkgs = true;
+                            home-manager.useUserPackages = true;
+                            home-manager.backupFileExtension = "hm-backup";
+
+                            home-manager.extraSpecialArgs = {
+                                inherit system;
+                                inherit libM;
+                                inherit inputs;
+                            };
+                        }
+                    ];
+
+                    specialArgs = {
+                        inherit system;
+                        inherit libM;
+                        inherit inputs;
+                    };
                 };
-            };
-        })
-        hosts);
+            })
+            hosts);
     };
 
     inputs = {
