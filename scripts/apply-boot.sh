@@ -23,11 +23,12 @@
 #   -h, --help       Show this help
 #
 set -euo pipefail
+umask 077
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 DOTFILES="${HOME}/dotfiles"
-LOG_DIR="${HOME}/snapshots"
-TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
+SNAPSHOT_DIR="${HOME}/snapshots"
+TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S-%N)"
 
 # ─── Defaults ─────────────────────────────────────────────────────────────────
 COMMAND="switch"
@@ -60,8 +61,32 @@ if [[ "$COMMAND" == "update" ]]; then
   COMMAND="switch"
 fi
 
-mkdir -p "$LOG_DIR"
-LOG_FILE="${LOG_DIR}/rebuild-${HOST}-${TIMESTAMP}.log"
+mkdir -p "$SNAPSHOT_DIR"
+chmod 700 "$SNAPSHOT_DIR"
+LOG_FILE="${SNAPSHOT_DIR}/nixapply-${HOST}-${TIMESTAMP}.log"
+
+finish() {
+  local status=$?
+  local size tmp
+  trap - EXIT
+  if [[ -f "$LOG_FILE" ]]; then
+    size=$(stat -c %s "$LOG_FILE" 2>/dev/null || printf '0')
+    if [[ "$size" =~ ^[0-9]+$ ]] && ((size > 2097152)); then
+      tmp="${LOG_FILE}.tmp"
+      { printf '%s\n' '[Earlier output truncated; final 2 MiB retained]'; tail -c 2097152 "$LOG_FILE"; } > "$tmp" &&
+        mv -f -- "$tmp" "$LOG_FILE" || rm -f -- "$tmp"
+    fi
+  fi
+  if [[ -n "${NIXSNAP:-}" && -x "$NIXSNAP" ]]; then
+    if ((status != 0)); then
+      "$NIXSNAP" --log "$LOG_FILE" --no-clipboard >/dev/null 2>&1 || true
+    else
+      "$NIXSNAP" --rotate-only >/dev/null 2>&1 || true
+    fi
+  fi
+  exit "$status"
+}
+trap finish EXIT
 
 # ─── Sanity checks ────────────────────────────────────────────────────────────
 if [[ $EUID -eq 0 ]]; then

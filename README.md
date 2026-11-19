@@ -127,6 +127,7 @@ modules/
     dune/                        # base16 scheme + wallpaper
 scripts/
   apply-boot.sh                  # rebuild wrapper (see below)
+  snapshot-config.sh             # runtime diagnostics
 ```
 
 ---
@@ -178,10 +179,13 @@ scripts/
 ## Custom scripts
 
 **`scripts/apply-boot.sh`** — safe rebuild wrapper around `nh os`.
-Subcommands: `check`, `build`, `diff` (uses `nvd`), `switch`, `boot`,
-`test`, `update` (reverts `flake.lock` if the build fails), `info`.
-On successful `switch`/`boot` it creates a `gen-<N>` git tag.
-Refuses to build on a dirty tree unless `--force`.
+Subcommands: `check`, `build`, `diff`, `switch`, `boot`, `test`,
+`update`, `info`. Refuses to build on a dirty tree unless `--force`.
+On failure it creates a diagnostic snapshot with a bounded log excerpt.
+
+**`nixsnap`** — captures live NixOS, hardware, generation, service,
+desktop and local Git state without exporting configuration contents.
+Keeps the latest 100 diagnostic reports and `nixapply` logs together.
 
 **`modules/user/desktop/common/waybar-bluetooth-display.sh`** — tiny
 helper that renders the current Bluetooth connection in waybar.

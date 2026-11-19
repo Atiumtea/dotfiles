@@ -1,379 +1,215 @@
 #!/usr/bin/env bash
-#
-# NixOS configuration snapshot.
-#
-# Usage:
-#   ./snapshot-config.sh                  # quick snapshot (default)
-#   ./snapshot-config.sh --core           # + core modules
-#   ./snapshot-config.sh --full           # everything
-#   ./snapshot-config.sh --host laptop    # override auto-detected host
-#   ./snapshot-config.sh --user ushki     # override auto-detected user
-#   ./snapshot-config.sh --diff           # replace file contents with git diff
-#   ./snapshot-config.sh --store          # add top-20 store paths by size
-#   ./snapshot-config.sh --no-git         # skip git log section
-#   ./snapshot-config.sh --help
-#
-set -euo pipefail
+set -u
+umask 077
 
-# ─── Constants ────────────────────────────────────────────────────────────────
-DOTFILES="${HOME}/dotfiles"
 SNAPSHOT_DIR="${HOME}/snapshots"
-TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S)"
+DOTFILES="${HOME}/dotfiles"
+HOST="$(hostname -s 2>/dev/null || hostname)"
+HOST="${HOST//[^[:alnum:]._-]/_}"
+TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S-%N)"
+LOG_FILE=""
+COPY_CLIPBOARD=true
+ROTATE_ONLY=false
+PURGE_LEGACY=false
+INCLUDE_JOURNAL=false
 
-# ─── Defaults ─────────────────────────────────────────────────────────────────
-MODE="quick"
-HOST="$(uname -n 2>/dev/null || echo 'unknown')"
-USERNAME="${USER:-$(id -un)}"
-INCLUDE_STORE=false
-DIFF_MODE=false
-INCLUDE_GIT=true
-
-# ─── Help ─────────────────────────────────────────────────────────────────────
 print_help() {
-  cat <<'EOF'
-Usage: snapshot-config.sh [OPTIONS]
-
-Options:
-  --quick          Quick snapshot (default): host config + lib only.
-  --core           Core modules: system/user defaults, hardware, hyprland, shells.
-  --full           Everything: nixvim, themes, scripts, full desktop config.
-  --host <name>    Override auto-detected hostname (default: `uname -n`).
-  --user <name>    Override auto-detected username (default: $USER).
-  --diff           Replace file contents with `git diff HEAD~1`.
-  --store          Add top-20 store paths by size (requires `result` symlink).
-  --no-git         Skip the git log section in the header.
-  -h, --help       Show this help message.
-
-Examples:
-  snapshot-config.sh --core
-  snapshot-config.sh --full --host laptop --user ushki
-  snapshot-config.sh --diff --store
-EOF
+  printf '%s\n' 'Usage: nixsnap [--log FILE] [--journal] [--no-clipboard] [--rotate-only] [--purge-legacy]'
 }
 
-# ─── Argument parsing ─────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --quick)   MODE="quick"; shift ;;
-    --core)    MODE="core";  shift ;;
-    --full)    MODE="full";  shift ;;
-    --host)    HOST="${2:?--host requires an argument}"; shift 2 ;;
-    --user)    USERNAME="${2:?--user requires an argument}"; shift 2 ;;
-    --diff)    DIFF_MODE=true; shift ;;
-    --store)   INCLUDE_STORE=true; shift ;;
-    --no-git)  INCLUDE_GIT=false; shift ;;
+    --log) LOG_FILE="${2:?--log requires a file}"; shift 2 ;;
+    --journal) INCLUDE_JOURNAL=true; shift ;;
+    --no-clipboard) COPY_CLIPBOARD=false; shift ;;
+    --rotate-only) ROTATE_ONLY=true; shift ;;
+    --purge-legacy) PURGE_LEGACY=true; shift ;;
     -h|--help) print_help; exit 0 ;;
-    *) echo "Unknown argument: $1" >&2; print_help; exit 1 ;;
+    *) printf 'Unknown argument: %s\n' "$1" >&2; print_help >&2; exit 2 ;;
   esac
 done
 
-OUTFILE="${SNAPSHOT_DIR}/nixos-${HOST}-${MODE}-${TIMESTAMP}.md"
+mkdir -p "$SNAPSHOT_DIR"
+chmod 700 "$SNAPSHOT_DIR"
 
-# ─── File lists by level ──────────────────────────────────────────────────────
-# Paths are relative to $DOTFILES. Order defines section order in the snapshot.
-
-BASE_FILES=(
-  "flake.nix"
-  "lib/default.nix"
-  "hosts/${HOST}/default.nix"
-  "hosts/${HOST}/configuration.nix"
-  "hosts/${HOST}/hardware-configuration.nix"
-  "hosts/${HOST}/hardware-configuration-additional.nix"
-  "hosts/${HOST}/home-${USERNAME}.nix"
-)
-
-CORE_FILES=(
-  # System
-  "modules/system/default.nix"
-  "modules/system/configuration.nix"
-  "modules/system/users.nix"
-  "modules/system/audio.nix"
-  "modules/system/gaming.nix"
-  "modules/system/mullvad.nix"
-  "modules/system/virtualization.nix"
-
-  # System / hardware
-  "modules/system/hardware/default.nix"
-  "modules/system/hardware/bluetooth.nix"
-  "modules/system/hardware/laptop.nix"
-  "modules/system/hardware/graphics/default.nix"
-  "modules/system/hardware/graphics/nvidia.nix"
-
-  # System / other
-  "modules/system/kernel/default.nix"
-  "modules/system/security/default.nix"
-  "modules/system/sddm/default.nix"
-  "modules/system/desktop/default.nix"
-  "modules/system/desktop/hyprland.nix"
-  "modules/system/styling/default.nix"
-  "modules/system/styling/stylix.nix"
-  "modules/system/styling/fonts.nix"
-
-  # User / entry points
-  "modules/user/default.nix"
-  "modules/user/home.nix"
-  "modules/user/git.nix"
-  "modules/user/security.nix"
-  "modules/user/xdg.nix"
-  "modules/user/mullvad.nix"
-
-  # User / shells
-  "modules/user/shells/default.nix"
-  "modules/user/shells/zsh.nix"
-
-  # User / browsers and terminals
-  "modules/user/browsers/default.nix"
-  "modules/user/browsers/firefox.nix"
-  "modules/user/terminals/default.nix"
-  "modules/user/terminals/kitty.nix"
-
-  # User / styling
-  "modules/user/styling/default.nix"
-  "modules/user/styling/cursors.nix"
-  "modules/user/styling/fonts.nix"
-  "modules/user/styling/stylix.nix"
-
-  # User / desktop (Hyprland)
-  "modules/user/desktop/default.nix"
-  "modules/user/desktop/hyprland/default.nix"
-  "modules/user/desktop/hyprland/hyprland.nix"
-  "modules/user/desktop/hyprland/hypridle.nix"
-  "modules/user/desktop/hyprland/hyprlock.nix"
-  "modules/user/desktop/hyprland/hyprsunset.nix"
-  "modules/user/desktop/common/default.nix"
-  "modules/user/desktop/common/rofi.nix"
-  "modules/user/desktop/common/waybar.nix"
-)
-
-FULL_FILES=(
-  # Extra system modules
-  "modules/system/desktop/niri.nix"
-  "modules/system/iriun/default.nix"
-  "modules/system/iriun/iriun.nix"
-  "modules/system/kernel/tty0tty.nix"
-  "modules/system/postgresql/default.nix"
-  "modules/system/styling/grub/default.nix"
-  "modules/system/styling/grub/themes/cybergrub-2077/theme.nix"
-  "modules/system/styling/plymouth/default.nix"
-  "modules/system/styling/plymouth/themes/arasaka/theme.nix"
-  "modules/system/styling/plymouth/themes/ecorp-glitch/theme.nix"
-
-  # Active theme
-  "modules/themes/dune/default.nix"
-
-  # User / editors
-  "modules/user/editors/default.nix"
-  "modules/user/editors/idea.nix"
-  "modules/user/editors/nixvim/default.nix"
-  "modules/user/editors/nixvim/keymaps.nix"
-  "modules/user/editors/nixvim/opts.nix"
-  "modules/user/editors/nixvim/plugins/default.nix"
-  "modules/user/editors/nixvim/plugins/cmp.nix"
-  "modules/user/editors/nixvim/plugins/conform.nix"
-  "modules/user/editors/nixvim/plugins/dadbod.nix"
-  "modules/user/editors/nixvim/plugins/git.nix"
-  "modules/user/editors/nixvim/plugins/lsp.nix"
-  "modules/user/editors/nixvim/plugins/misc.nix"
-  "modules/user/editors/nixvim/plugins/telescope.nix"
-  "modules/user/editors/nixvim/plugins/treesitter.nix"
-  "modules/user/editors/nixvim/plugins/trouble.nix"
-  "modules/user/editors/nixvim/plugins/typst.nix"
-  "modules/user/editors/nixvim/plugins/which-key.nix"
-
-  # User / misc
-  "modules/user/misc/default.nix"
-  "modules/user/misc/music.nix"
-
-  # User / desktop (Niri)
-  "modules/user/desktop/niri/default.nix"
-  "modules/user/desktop/niri/niri.nix"
-
-  # Misc
-  "alejandra.toml"
-  "scripts/apply-boot.sh"
-)
-
-# ─── Select final file list based on mode ─────────────────────────────────────
-case "$MODE" in
-  quick) FILES=("${BASE_FILES[@]}") ;;
-  core)  FILES=("${BASE_FILES[@]}" "${CORE_FILES[@]}") ;;
-  full)  FILES=("${BASE_FILES[@]}" "${CORE_FILES[@]}" "${FULL_FILES[@]}") ;;
-esac
-
-# ─── Section builders ─────────────────────────────────────────────────────────
-build_store_section() {
-  local result_link="${DOTFILES}/result"
-
-  if [[ ! -L "$result_link" ]]; then
-    echo "_No \`result\` symlink in \`${DOTFILES}\`. Run \`nixos-rebuild build --flake .#${HOST}\` first._"
-    return
-  fi
-
-  local target
-  target="$(readlink -f "$result_link" 2>/dev/null || true)"
-  if [[ -z "$target" ]]; then
-    echo "_Failed to resolve \`result\` symlink._"
-    return
-  fi
-
-  if ! command -v nix >/dev/null 2>&1; then
-    echo "_The \`nix\` command is not available._"
-    return
-  fi
-
-  echo "Closure root: \`${target}\`"
-  echo
-  echo "### Top-20 store paths by size"
-  echo
-  echo '```'
-  nix path-info -rSh "$target" 2>/dev/null \
-    | sort -k2 -h \
-    | tail -20 \
-    || echo "(nix path-info failed)"
-  echo '```'
-  echo
-  echo "### Total closure size"
-  echo
-  echo '```'
-  if command -v jq >/dev/null 2>&1; then
-    nix path-info -rSh --json "$target" 2>/dev/null \
-      | jq -r '[.[].narSize] | add | . / 1024 / 1024 | "\(. | floor) MiB"'
-  else
-    echo "(requires jq)"
-  fi
-  echo '```'
-}
-
-build_files_section() {
-  if [[ "$DIFF_MODE" == true ]]; then
-    echo "## Recent changes"
-    echo
-    if git -C "$DOTFILES" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      echo '```diff'
-      if git -C "$DOTFILES" rev-parse HEAD~1 >/dev/null 2>&1; then
-        git -C "$DOTFILES" diff HEAD~1 2>/dev/null || echo "(git diff failed)"
-      else
-        echo "(less than two commits; falling back to working tree diff)"
-        git -C "$DOTFILES" diff 2>/dev/null || echo "(no changes)"
-      fi
-      echo '```'
-    else
-      echo "_Not a git repository; cannot produce a diff._"
-    fi
-    return
-  fi
-
-  echo "## File contents"
-  echo
-  local f full
-  for f in "${FILES[@]}"; do
-    full="${DOTFILES}/${f}"
-    echo "### \`${f}\`"
-    echo
-    if [[ -f "$full" ]]; then
-      echo '```nix'
-      cat "$full"
-      echo '```'
-    else
-      echo "_File not found: \`${full}\`._"
-    fi
-    echo
+rotate() {
+  local file
+  local -a stale=()
+  mapfile -t stale < <(
+    find "$SNAPSHOT_DIR" -maxdepth 1 -type f \
+      \( -name 'diagnostic-*.md' -o -name 'nixapply-*.log' \) \
+      -printf '%T@ %p\n' | sort -rn | sed -n '101,$s/^[^ ]* //p'
+  )
+  for file in "${stale[@]}"; do
+    rm -f -- "$file"
   done
 }
 
-# ─── Gather header metadata ───────────────────────────────────────────────────
-GIT_LOG=""
-if [[ "$INCLUDE_GIT" == true ]] && git -C "$DOTFILES" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  GIT_LOG="$(git -C "$DOTFILES" log -n 10 --pretty=format:'%h %ad %s' --date=short 2>/dev/null || true)"
+if [[ "$ROTATE_ONLY" == true ]]; then
+  rotate
+  exit 0
 fi
 
-FLAKE_METADATA=""
-if command -v nix >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-  FLAKE_METADATA="$(nix flake metadata "$DOTFILES" --json 2>/dev/null \
-    | jq -r '.locks.nodes | to_entries[] | select(.value.locked) | "\(.key): \(.value.locked.owner // "?")/\(.value.locked.repo // "?") @ \(.value.locked.rev // "?")"' 2>/dev/null \
-    || true)"
+if [[ "$PURGE_LEGACY" == true ]]; then
+  mapfile -d '' -t legacy < <(
+    find "$SNAPSHOT_DIR" -maxdepth 1 -type f \
+      \( -name 'nixos-*.md' -o -name 'rebuild-*.log' \) -print0
+  )
+  if ((${#legacy[@]} == 0)); then
+    printf '%s\n' 'No legacy snapshots found.'
+    exit 0
+  fi
+  printf 'Legacy files to delete (%s):\n' "${#legacy[@]}"
+  printf '  %s\n' "${legacy[@]}"
+  read -r -p 'Delete these files? [y/N] ' answer
+  case "$answer" in
+    y|Y|yes|YES) rm -f -- "${legacy[@]}" ;;
+    *) printf '%s\n' 'Cancelled.'; exit 0 ;;
+  esac
+  rotate
+  printf '%s\n' 'Legacy files removed.'
+  exit 0
 fi
 
-# ─── Generate snapshot ────────────────────────────────────────────────────────
-mkdir -p "$SNAPSHOT_DIR"
+capture() {
+  local title="$1"
+  shift
+  printf '### %s\n\n```text\n' "$title"
+  if command -v "$1" >/dev/null 2>&1; then
+    "$@" 2>&1 | sed -n '1,120p'
+    local status=${PIPESTATUS[0]}
+    if ((status != 0)); then
+      printf '[exit status: %s]\n' "$status"
+    fi
+  else
+    printf 'unavailable\n'
+  fi
+  printf '```\n\n'
+}
+
+write_power() {
+  local device field value found=false
+  printf '### Battery and backlight\n\n```text\n'
+  for device in /sys/class/power_supply/BAT*; do
+    [[ -d "$device" ]] || continue
+    found=true
+    printf '%s\n' "${device##*/}"
+    for field in status capacity charge_control_start_threshold charge_control_end_threshold; do
+      if [[ -r "$device/$field" ]]; then
+        read -r value < "$device/$field"
+        printf '  %s: %s\n' "$field" "$value"
+      fi
+    done
+  done
+  for device in /sys/class/backlight/*; do
+    [[ -d "$device" ]] || continue
+    found=true
+    printf '%s\n' "${device##*/}"
+    for field in brightness max_brightness; do
+      if [[ -r "$device/$field" ]]; then
+        read -r value < "$device/$field"
+        printf '  %s: %s\n' "$field" "$value"
+      fi
+    done
+  done
+  [[ "$found" == true ]] || printf 'no battery or backlight devices\n'
+  printf '```\n\n'
+}
+
+OUTFILE="${SNAPSHOT_DIR}/diagnostic-${HOST}-${TIMESTAMP}.md"
+TMPFILE="$(mktemp "${SNAPSHOT_DIR}/.diagnostic.XXXXXX")"
+trap 'rm -f -- "$TMPFILE"' EXIT
 
 {
-  echo "# NixOS Config Snapshot — ${HOST}"
-  echo
-  echo "| Field | Value |"
-  echo "|-------|-------|"
-  echo "| Host | \`${HOST}\` |"
-  echo "| User | \`${USERNAME}\` |"
-  echo "| Mode | \`${MODE}\` |"
-  echo "| Diff mode | \`${DIFF_MODE}\` |"
-  echo "| Store report | \`${INCLUDE_STORE}\` |"
-  echo "| Snapshot date | $(date '+%Y-%m-%d %H:%M:%S %Z') |"
-  echo "| Home directory | \`${HOME}\` |"
-  echo "| Repository | \`${DOTFILES}\` |"
-  echo "| Files in snapshot | ${#FILES[@]} |"
-  echo
+  printf '# NixOS diagnostic\n\nGenerated: %s\nHost: %s\nUser: %s\n\n' \
+    "$(date --iso-8601=seconds)" "$HOST" "${USER:-unknown}"
 
-  if [[ -n "$GIT_LOG" ]]; then
-    echo "---"
-    echo
-    echo "## Recent commits"
-    echo
-    echo '```'
-    echo "$GIT_LOG"
-    echo '```'
-    echo
+  printf '## System\n\n'
+  capture 'NixOS' nixos-version
+  capture 'Kernel' uname -a
+  capture 'Uptime' uptime -p
+  capture 'Nix' nix --version
+
+  printf '## Active generations\n\n'
+  capture 'Current system' readlink -f /run/current-system
+  capture 'Booted system' readlink -f /run/booted-system
+  capture 'Recent system generations' bash -c 'nix-env -p /nix/var/nix/profiles/system --list-generations | tail -n 8'
+  capture 'Home Manager profile' readlink -f "${HOME}/.local/state/nix/profiles/home-manager"
+
+  printf '## Local configuration state\n\n'
+  if git -C "$DOTFILES" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    capture 'Repository revision' git -C "$DOTFILES" log -1 --format='%H%n%ad%n%s' --date=iso-strict
+    capture 'Working tree' git -C "$DOTFILES" status --short --branch
+    capture 'Unstaged change summary' git -C "$DOTFILES" diff --stat
+    capture 'Staged change summary' git -C "$DOTFILES" diff --cached --stat
+    capture 'Flake lock checksum' sha256sum "${DOTFILES}/flake.lock"
+  else
+    printf 'Repository unavailable: %s\n\n' "$DOTFILES"
   fi
 
-  if [[ -n "$FLAKE_METADATA" ]]; then
-    echo "---"
-    echo
-    echo "## Locked inputs (from flake.lock)"
-    echo
-    echo '```'
-    echo "$FLAKE_METADATA"
-    echo '```'
-    echo
+  printf '## Hardware and resources\n\n'
+  capture 'CPU' lscpu
+  capture 'Memory' free -h
+  capture 'PCI devices and drivers' lspci -nnk
+  capture 'Block devices' lsblk -e7 -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS
+  capture 'Filesystem space' df -hT / /nix /home
+  capture 'GPU status' nvidia-smi --query-gpu=name,driver_version,temperature.gpu,pstate,memory.total --format=csv,noheader
+  capture 'Sensors' sensors
+  write_power
+
+  printf '## Desktop session\n\n'
+  capture 'Hyprland version' hyprctl version
+  if command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    printf '### Monitors\n\n```json\n'
+    hyprctl monitors -j 2>/dev/null | jq -c '[.[] | {name, width, height, refreshRate, scale, transform, focused}]' 2>/dev/null || printf 'unavailable\n'
+    printf '```\n\n'
+  fi
+  capture 'Waybar version' waybar --version
+
+  printf '## Service health\n\n'
+  capture 'Failed system services' systemctl --failed --no-legend --plain
+  capture 'Failed user services' systemctl --user --failed --no-legend --plain
+  capture 'Flatpak applications' flatpak list --app --columns=application,branch,version
+
+  if [[ "$INCLUDE_JOURNAL" == true ]]; then
+    printf '### Current boot errors\n\n```text\n'
+    journalctl -b -p err..alert --no-pager -n 60 -o short-iso 2>&1 | sed -n '1,60p' | sed -E \
+      -e 's/((password|passwd|token|secret|api[_-]?key|authorization)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1[REDACTED]/Ig' \
+      -e 's#(https?://)[^/@:]+:[^/@]+@#\1[REDACTED]@#g' \
+      -e 's/(Bearer[[:space:]]+)[A-Za-z0-9._~+\/-]+/\1[REDACTED]/Ig'
+    printf '```\n\n'
   fi
 
-  if [[ "$INCLUDE_STORE" == true ]]; then
-    echo "---"
-    echo
-    echo "## Store usage"
-    echo
-    build_store_section
-    echo
+  if [[ -n "$LOG_FILE" ]]; then
+    printf '## nixapply log excerpt\n\n'
+    if [[ -f "$LOG_FILE" ]]; then
+      printf 'Source: %s\n\n```text\n' "$LOG_FILE"
+      tail -n 100 "$LOG_FILE" | sed -E \
+        -e 's/((password|passwd|token|secret|api[_-]?key|authorization)[[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1[REDACTED]/Ig' \
+        -e 's#(https?://)[^/@:]+:[^/@]+@#\1[REDACTED]@#g' \
+        -e 's/(Bearer[[:space:]]+)[A-Za-z0-9._~+\/-]+/\1[REDACTED]/Ig'
+      printf '```\n\n'
+    else
+      printf 'Log file not found: %s\n\n' "$LOG_FILE"
+    fi
   fi
 
-  echo "---"
-  echo
-  build_files_section
+  printf '%s\n' '---' '' 'No configuration file contents or diffs are included.'
+} > "$TMPFILE"
 
-  echo "---"
-  echo
-  echo "_Snapshot generated by \`snapshot-config.sh\` (mode: \`${MODE}\`)._"
-} > "$OUTFILE"
+mv -- "$TMPFILE" "$OUTFILE"
+rotate
 
-# ─── Copy to clipboard ────────────────────────────────────────────────────────
-CLIP_TOOL="not found"
-if command -v wl-copy >/dev/null 2>&1; then
-  wl-copy < "$OUTFILE"
-  CLIP_TOOL="wl-copy (Wayland)"
-elif command -v xclip >/dev/null 2>&1; then
-  xclip -selection clipboard < "$OUTFILE"
-  CLIP_TOOL="xclip (X11)"
+CLIPBOARD='not requested'
+if [[ "$COPY_CLIPBOARD" == true ]]; then
+  if command -v wl-copy >/dev/null 2>&1 && wl-copy < "$OUTFILE"; then
+    CLIPBOARD='copied with wl-copy'
+  elif command -v xclip >/dev/null 2>&1 && xclip -selection clipboard < "$OUTFILE"; then
+    CLIPBOARD='copied with xclip'
+  else
+    CLIPBOARD='unavailable'
+  fi
 fi
 
-# ─── Summary ──────────────────────────────────────────────────────────────────
-BYTES=$(wc -c < "$OUTFILE")
-LINES=$(wc -l < "$OUTFILE")
-MISSING=$(grep -c '^_File not found' "$OUTFILE" 2>/dev/null || echo 0)
-
-echo "✓ Snapshot ready"
-echo "  Mode:          ${MODE}"
-echo "  Host:          ${HOST}"
-echo "  Diff mode:     ${DIFF_MODE}"
-echo "  Store report:  ${INCLUDE_STORE}"
-echo "  File:          ${OUTFILE}"
-echo "  Size:          ${BYTES} bytes / ${LINES} lines"
-echo "  Missing files: ${MISSING}"
-echo "  Clipboard:     ${CLIP_TOOL}"
+printf 'Diagnostic snapshot: %s\nSize: %s bytes\nClipboard: %s\n' \
+  "$OUTFILE" "$(wc -c < "$OUTFILE")" "$CLIPBOARD"

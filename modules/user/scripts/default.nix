@@ -6,11 +6,12 @@
     home.packages = [
         (pkgs.writeShellScriptBin "nixapply" ''
             export PATH="${lib.makeBinPath (with pkgs; [nh alejandra nvd git coreutils])}:$PATH"
+            export NIXSNAP="${../../../scripts/snapshot-config.sh}"
             exec ${../../../scripts/apply-boot.sh} "$@"
         '')
 
         (pkgs.writeShellScriptBin "nixsnap" ''
-            export PATH="${lib.makeBinPath (with pkgs; [wl-clipboard git jq nix coreutils])}:$PATH"
+            export PATH="${lib.makeBinPath (with pkgs; [wl-clipboard git jq nix coreutils findutils gnused])}:$PATH"
             exec ${../../../scripts/snapshot-config.sh} "$@"
         '')
 
