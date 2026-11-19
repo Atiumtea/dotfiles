@@ -10,6 +10,4 @@ Thumbs.db
 
 hosts/*/secrets.yaml
 *.yaml.unencrypted
-!secrets.yaml.unencrypted
-
-snapshots/
+!secrets.

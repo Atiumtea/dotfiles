@@ -270,7 +270,8 @@ in {
             style = lib.mkAfter (
                 let
                     waybarCss = builtins.readFile ./waybar.css;
-                    hyproledCss = builtins.readFile "${hyproledPackage}/share/hyproled/waybar-icons.css";
+                    # Read CSS from the flake source to avoid import-from-derivation.
+                    hyproledCss = builtins.readFile "${inputs.hyproled.outPath}/assets/waybar-icons.css";
                 in
                     lib.replaceStrings
                     ["@HYPROLED_ICON_DIR@"]
