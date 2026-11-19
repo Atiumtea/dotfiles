@@ -7,7 +7,7 @@
 }: let
     waybarToggleBinding = lib.optionalString config.userSettings.waybar.toggle.enable ''
         hl.bind(mainMod .. " + H",
-            hl.dsp.exec_cmd("${pkgs.procps}/bin/pkill -USR1 -x waybar"))
+            hl.dsp.exec_cmd("${pkgs.procps}/bin/pkill -USR1 -x .waybar-wrapped"))
     '';
 in {
     options.userSettings.waybar.toggle.enable =
