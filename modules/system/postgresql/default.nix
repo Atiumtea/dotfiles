@@ -59,30 +59,30 @@
 
         # SQL generation for users and databases
         usersSql = lib.concatStringsSep "\n" (map (user: ''
-                DO $$
-                BEGIN
-                  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${user.name}') THEN
-                    CREATE ROLE ${user.name} WITH LOGIN PASSWORD '${user.password}';
-                  END IF;
-                END
-                $$;
-            '')
-            cfg.users);
+            DO $$
+            BEGIN
+              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${user.name}') THEN
+                CREATE ROLE ${user.name} WITH LOGIN PASSWORD '${user.password}';
+              END IF;
+            END
+            $$;
+        '')
+        cfg.users);
 
         databasesSql = lib.concatStringsSep "\n" (map (db: ''
-                SELECT 'CREATE DATABASE ${db}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${db}')\gexec
-            '')
-            cfg.databases);
+            SELECT 'CREATE DATABASE ${db}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${db}')\gexec
+        '')
+        cfg.databases);
 
         ownershipSql = lib.concatStringsSep "\n" (lib.flatten (map (
-                user:
-                    map (db: ''
-                        ALTER DATABASE ${db} OWNER TO ${user.name};
-                        GRANT ALL PRIVILEGES ON DATABASE ${db} TO ${user.name};
-                    '')
-                    user.databases
-            )
-            cfg.users));
+            user:
+                map (db: ''
+                    ALTER DATABASE ${db} OWNER TO ${user.name};
+                    GRANT ALL PRIVILEGES ON DATABASE ${db} TO ${user.name};
+                '')
+                user.databases
+        )
+        cfg.users));
 
         initialScript = pkgs.writeText "init-postgresql.sql" ''
             ${usersSql}

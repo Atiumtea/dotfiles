@@ -42,41 +42,40 @@
 
     config = {
         users.users = lib.listToAttrs (map (user: {
-                name = user.name;
+            name = user.name;
 
-                value = {
-                    isNormalUser = true;
+            value = {
+                isNormalUser = true;
 
-                    extraGroups = lib.unique (
-                        user.extraGroups
-                        ++ lib.optional user.isAdmin "wheel"
-                    );
+                extraGroups = lib.unique (
+                    user.extraGroups
+                    ++ lib.optional user.isAdmin "wheel"
+                );
 
-                    createHome = true;
+                createHome = true;
 
-                    shell = user.shell;
-                };
-            })
-            config.hostSettings.users);
+                shell = user.shell;
+            };
+        })
+        config.hostSettings.users);
 
         home-manager.users = lib.listToAttrs (map (user: {
-                name = user.name;
-                value = {
-                    home = {
-                        username = user.name;
-                        homeDirectory = "/home/${user.name}";
-                    };
+            name = user.name;
+            value = {
+                home = {
+                    username = user.name;
+                    homeDirectory = "/home/${user.name}";
                 };
-            })
-            config.hostSettings.users);
+            };
+        })
+        config.hostSettings.users);
 
         # Enable zsh if necessary.
         programs.zsh = let
-            zshUsed =
-                builtins.any (
-                    user: user.shell == pkgs.zsh
-                )
-                config.hostSettings.users;
+            zshUsed = builtins.any (
+                user: user.shell == pkgs.zsh
+            )
+            config.hostSettings.users;
         in
             lib.mkIf zshUsed {
                 enable = true;

@@ -16,18 +16,18 @@
     config = {
         # do not change; automatically imports everything needed
         home-manager.users = lib.listToAttrs (map (user: {
-                name = user.name;
-                value = {
-                    # Pass the current user's name to the Home Manager modules.
-                    # modules/user/shells/default.nix requires the `username` argument.
-                    _module.args.username = user.name;
+            name = user.name;
+            value = {
+                # Pass the current user's name to the Home Manager modules.
+                # modules/user/shells/default.nix requires the `username` argument.
+                _module.args.username = user.name;
 
-                    imports = [
-                        ./home-${user.name}.nix
-                        ../../modules/user
-                    ];
-                };
-            })
-            config.hostSettings.users);
+                imports = [
+                    ./home-${user.name}.nix
+                    ../../modules/user
+                ];
+            };
+        })
+        config.hostSettings.users);
     };
 }
