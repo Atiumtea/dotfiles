@@ -65,21 +65,6 @@
             };
         })
         hosts);
-
-        devShells."${system}".default = let
-            pkgs = import inputs.nixpkgs {
-                inherit system;
-                config.allowUnfree = true;
-            };
-        in
-            pkgs.mkShell {
-                packages = with pkgs; [
-                    nixd
-                    inputs.alejandra.defaultPackage.${system}
-                    zsh
-                    steamcmd
-                ];
-            };
     };
 
     inputs = {
@@ -97,10 +82,6 @@
         nixvim.url = "github:nix-community/nixvim";
         niri = {
             url = "github:sodiboo/niri-flake";
-            inputs.nixpkgs.follows = "nixpkgs";
-        };
-        alejandra = {
-            url = "github:kamadorueda/alejandra/4.0.0";
             inputs.nixpkgs.follows = "nixpkgs";
         };
         zen-browser = {
