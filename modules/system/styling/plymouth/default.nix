@@ -8,7 +8,19 @@
     theme = config.hostSettings.styling.plymouth.theme;
 
     customThemes = libM.collectDirs ./themes;
-    defaultThemes = libM.collectDirs "${pkgs.plymouth}/share/plymouth/themes";
+    # Built-in themes provided by the pinned Nixpkgs Plymouth package.
+    defaultThemes = [
+        "bgrt"
+        "details"
+        "fade-in"
+        "glow"
+        "script"
+        "solar"
+        "spinfinity"
+        "spinner"
+        "text"
+        "tribar"
+    ];
 in {
     options = {
         hostSettings = {

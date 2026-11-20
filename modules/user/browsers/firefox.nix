@@ -1,5 +1,6 @@
 {
     config,
+    inputs,
     osConfig,
     lib,
     pkgs,
@@ -28,7 +29,7 @@ in {
             enable = true;
             profiles.default = {
                 isDefault = true;
-                preConfig = builtins.readFile "${pkgs.arkenfox-userjs}/user.js";
+                preConfig = builtins.readFile "${inputs.arkenfox-userjs}/user.js";
                 settings = {
                     # arkenfox overrides
                     "browser.startup.page" = 3;
