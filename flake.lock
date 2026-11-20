@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "arkenfox-userjs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776716453,
+        "narHash": "sha256-oo3/j53+vDh0Y+uCMPFUGEc4bDr7uD4CzagEuQX5PM8=",
+        "owner": "arkenfox",
+        "repo": "user.js",
+        "rev": "bb45863be796d331717e2b5d6e490f0d3e3cf93f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "arkenfox",
+        "ref": "144.0",
+        "repo": "user.js",
+        "type": "github"
+      }
+    },
     "base16": {
       "inputs": {
         "fromYaml": "fromYaml"
@@ -483,6 +500,7 @@
     },
     "root": {
       "inputs": {
+        "arkenfox-userjs": "arkenfox-userjs",
         "home-manager": "home-manager",
         "hyproled": "hyproled",
         "niri": "niri",
