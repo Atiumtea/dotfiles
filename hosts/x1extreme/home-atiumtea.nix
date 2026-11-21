@@ -41,7 +41,6 @@
             };
         };
 
-
         services.blueman-applet.enable = true;
 
         home.sessionVariables = {
