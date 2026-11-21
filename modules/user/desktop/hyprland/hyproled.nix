@@ -9,9 +9,7 @@
     cfg = config.userSettings.hyproled;
     autoShift = cfg.autoShift;
 
-    hyproledPackage = import ../common/hyproled-package.nix {
-        inherit inputs lib pkgs;
-    };
+    hyproledPackage = inputs.hyproled.packages.${pkgs.system}.default;
 
     schedulerState = pkgs.writeShellScript "hyproled-scheduler-state" ''
         set -Eeuo pipefail

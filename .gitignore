@@ -8,6 +8,4 @@ result-*
 .DS_Store
 Thumbs.db
 
-hosts/*/secrets.yaml
 *.yaml.unencrypted
-!secrets.

@@ -171,7 +171,7 @@ scripts/
 | `misc/`                       | discord, mpv, btop, feh, lazydocker, mpd + rmpc + cava, obsidian |
 | `styling/`                    | cursors (Quintom), fonts, Stylix HM targets             |
 | `git.nix`                     | git + lazygit (overrideGpg)                             |
-| `security.nix`                | gpg, ssh, ssh-agent, gpg-agent (pinentry-qt)            |
+| `security.nix` | gpg, ssh, ssh-agent, gpg-agent (pinentry-qt), sops-nix (age-encrypted user secrets) |
 | `xdg.nix`                     | XDG dirs, mimeApps                                      |
 
 ---
