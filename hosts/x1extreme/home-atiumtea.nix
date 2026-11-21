@@ -41,11 +41,6 @@
             };
         };
 
-        # TODO: move to sops-nix when Go 1.26 lands in nixpkgs.
-        # For now, set OPENROUTER_API_KEY in ~/.config/openrouter-key
-        # and uncomment the line below:
-        # home.sessionVariables.OPENROUTER_API_KEY = builtins.readFile
-        #   "${config.home.homeDirectory}/.config/openrouter-key";
 
         services.blueman-applet.enable = true;
 

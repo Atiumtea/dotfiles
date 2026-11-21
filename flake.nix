@@ -42,12 +42,15 @@
                         # Declarative Flatpak application management
                         inputs.nix-flatpak.nixosModules.nix-flatpak
 
-                        # inputs.sops-nix.nixosModules.sops  # TODO: re-enable when Go 1.26 lands in nixpkgs
                         inputs.home-manager.nixosModules.home-manager
                         {
                             home-manager.useGlobalPkgs = true;
                             home-manager.useUserPackages = true;
                             home-manager.backupFileExtension = "hm-backup";
+
+                            home-manager.sharedModules = [
+                                inputs.sops-nix.homeManagerModules.sops
+                            ];
 
                             home-manager.extraSpecialArgs = {
                                 inherit system;
