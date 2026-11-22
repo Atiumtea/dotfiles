@@ -16,8 +16,7 @@
             pkgs.callPackage ./themes/retro/theme.nix {
                 src = inputs.retrogrub;
             }
-        else
-            pkgs.callPackage ./themes/${theme}/theme.nix {};
+        else pkgs.callPackage ./themes/${theme}/theme.nix {};
 
     customThemes = libM.collectDirs ./themes;
 in {

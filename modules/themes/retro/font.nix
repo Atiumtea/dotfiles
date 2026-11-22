@@ -1,7 +1,4 @@
-{
-    stdenvNoCC,
-    ...
-}:
+{stdenvNoCC, ...}:
 stdenvNoCC.mkDerivation {
     pname = "bm437-ibm-xga-ai";
     version = "1.0";

@@ -61,14 +61,16 @@ in {
                 };
             };
 
-            packages = [
-                cfg.serif.package
-                cfg.sansSerif.package
-                cfg.monospace.package
-                cfg.emoji.package
+            packages =
+                [
+                    cfg.serif.package
+                    cfg.sansSerif.package
+                    cfg.monospace.package
+                    cfg.emoji.package
 
-                pkgs.corefonts
-            ] ++ lib.optional
+                    pkgs.corefonts
+                ]
+                ++ lib.optional
                 (config.hostSettings.styling.theme == "retro")
                 retroFont;
 
