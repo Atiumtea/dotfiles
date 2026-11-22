@@ -241,16 +241,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1795128428,
-        "narHash": "sha256-yfJcYsY04Km4dMD3jesIZe9kfKAuFibW4/EP40ilvU0=",
+        "lastModified": 1795356949,
+        "narHash": "sha256-1gOLwRjyUeJ4/UvDuKDEuWUIBuNjiCLbOIfp1yZFs48=",
         "owner": "Atiumtea",
         "repo": "hyproled",
-        "rev": "ea215d2654893028ba926ab307e597bdc5059bc6",
+        "rev": "901a51894fcdc8009e2ceedac3ca198538a6c3d1",
         "type": "github"
       },
       "original": {
         "owner": "Atiumtea",
-        "ref": "feature/pixel-shift",
+        "ref": "main",
         "repo": "hyproled",
         "type": "github"
       }
