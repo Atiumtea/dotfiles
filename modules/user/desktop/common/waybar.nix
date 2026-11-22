@@ -206,7 +206,8 @@ in {
                     "custom/hyproled" = {
                         exec = "${hyproledPackage}/bin/hyproled --status";
                         return-type = "json";
-                        interval = 1;
+                        interval = "once";
+                        exec-on-event = false;
                         signal = 10;
                         format = " ";
                         tooltip = true;

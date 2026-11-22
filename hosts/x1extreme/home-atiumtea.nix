@@ -16,7 +16,7 @@
 
             hyproled.autoShift = {
                 enable = true;
-                interval = "15min";
+                interval = "3min";
             };
 
             waybar.toggle.enable = true;

@@ -166,7 +166,7 @@ scripts/
 | `editors/nixvim/`             | NixVim: blink-cmp, LSP (nixd, clangd, rust-analyzer, ruff, ty, yamlls, helm_ls, terraformls), telescope, treesitter, oil, gitsigns, lazygit, trouble, conform, which-key, todo-comments, bufferline, lualine, typst-preview |
 | `editors/vscode.nix`          | VS Code                                                 |
 | `desktop/common/`             | rofi, waybar, mako, yazi, grimblast, satty, wl-clipboard, linux-wallpaperengine |
-| `desktop/hyprland/`           | Hyprland, hypridle, hyprlock, hyprsunset, hyprpaper, XDG portals |
+| `desktop/hyprland/`           | Hyprland, hypridle, hyprlock, hyprsunset, hyprpaper, hyproled (Mask, Pixel Shift, signal-driven Waybar status, 3-minute scheduler), XDG portals |
 | `desktop/niri/`               | Niri + grimblast/satty                                  |
 | `misc/`                       | discord, mpv, btop, feh, lazydocker, mpd + rmpc + cava, obsidian |
 | `styling/`                    | cursors (Quintom), fonts, Stylix HM targets             |

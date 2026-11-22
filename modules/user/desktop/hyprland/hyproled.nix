@@ -25,7 +25,7 @@
                 (
                     ($classes | index("active") != null)
                     and (
-                        any($classes[]; startswith("mask-"))
+                        any($classes[]; startswith("pixels-"))
                         or (
                             ($classes | index("pixel-shift-enabled") != null)
                             and ($classes | index("pixel-shift-mode-fixed") == null)
@@ -168,7 +168,7 @@ in {
 
             interval = lib.mkOption {
                 type = lib.types.str;
-                default = "15min";
+                default = "3min";
                 description = "Interval between automatic steps of active dynamic hyproled effects.";
             };
         };
