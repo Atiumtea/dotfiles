@@ -81,14 +81,24 @@ Adding a second user requires one entry in `hostSettings.users` and a correspond
 
 `hostSettings.styling.theme` selects one. Both `modules/system/styling/stylix.nix`
 and `modules/user/styling/stylix.nix` import the same file and hand it to
-Stylix. SDDM, GRUB, Plymouth, rofi, kitty, Hyprland, cava and rmpc all
-read colors from `config.lib.stylix.colors` — swapping one string
-recolors the entire system.
+Stylix. SDDM, Hyprland, rofi, kitty, Waybar, cava and rmpc consume the
+shared `config.lib.stylix.colors` palette. GRUB and Plymouth use their
+separately selected themes.
 
 Custom GRUB / Plymouth themes live in
 `modules/system/styling/{grub,plymouth}/themes/<name>/theme.nix` and are
 picked with `styling.grub.theme` / `styling.plymouth.theme`. `"stylix"`
-(a flat color) is always a valid value.
+(a flat color) is always a valid value. The `retro` GRUB theme is
+packaged from the `Atiumtea/retrogrub` flake input.
+
+The `retro` scheme also installs the upstream BM437 font. RetroPC
+Hyprlock loads its upstream color preset; SDDM and Hyprland continue
+to use the shared Stylix palette. The `retro` GRUB theme is
+packaged from the `Atiumtea/retrogrub` flake input.
+
+The `retro` scheme also installs the upstream BM437 font. RetroPC
+Hyprlock loads its upstream color preset; SDDM and Hyprland continue
+to use the shared Stylix palette.
 
 `lib/default.nix` exposes `collectDirs`, used to auto-discover theme
 directories so the option `enum` never drifts.
@@ -124,7 +134,8 @@ modules/
       niri/
     styling/                     # cursors, fonts, stylix (HM side)
   themes/
-    dune/                        # base16 scheme + wallpaper
+    dune/                        # Base16 scheme + wallpaper
+    retro/                       # RetroPC scheme, wallpaper, BM437 font, Hyprlock preset and LICENSE
 scripts/
   apply-boot.sh                  # rebuild wrapper (see below)
   snapshot-config.sh             # runtime diagnostics
@@ -237,8 +248,8 @@ Plus starship/fzf/zoxide integration from their respective HM modules.
 | `SUPER+drag` / right-drag   | move / resize window                  |
 | `XF86Audio*`, `XF86MonBrightness*` | volume / mute / brightness     |
 
-Waybar, hyprlock, hypridle and hyprsunset are all configured from the
-same Stylix palette.
+Waybar, hypridle and hyprsunset use the Stylix palette. Hyprlock also
+uses it, except for RetroPC, which loads the upstream color preset.
 
 ### NixVim (`leader = Space`)
 

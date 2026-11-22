@@ -498,6 +498,22 @@
         "type": "github"
       }
     },
+    "retrogrub": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795371969,
+        "narHash": "sha256-F96lDe708xWb15g47WExZaqsPvnryFx6y944suCXHXY=",
+        "owner": "Atiumtea",
+        "repo": "retrogrub",
+        "rev": "9211344e915ad2acce87a13becf9dbbb59a1ea58",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Atiumtea",
+        "repo": "retrogrub",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "arkenfox-userjs": "arkenfox-userjs",
@@ -510,6 +526,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixvim": "nixvim",
         "pi-nix": "pi-nix",
+        "retrogrub": "retrogrub",
         "sops-nix": "sops-nix",
         "stylix": "stylix",
         "zen-browser": "zen-browser"
