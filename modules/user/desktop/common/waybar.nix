@@ -22,7 +22,7 @@
             for icon in "${hyproledPackage}/share/hyproled/icons/"*.svg; do
                 name="$(basename "$icon")"
                 sed \
-                    -e 's/class="success"/fill="#${config.lib.stylix.colors.base0D}"/g' \
+                    -e 's/class="success"/fill="#${config.lib.stylix.colors.base0B}"/g' \
                     -e 's/class="warning"/fill="#${config.lib.stylix.colors.base04}"/g' \
                     -e 's/class="error"/fill="#${config.lib.stylix.colors.base08}"/g' \
                     "$icon" > "$out/$name"

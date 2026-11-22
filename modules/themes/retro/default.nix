@@ -1,27 +1,28 @@
 {
     scheme = "RetroPC";
     slug = "retro";
-    author = "Ron Dilley (https://github.com/rondilley)";
-    description = "Amber monochrome CRT theme";
+    author = "Ron Dilley, adapted by Atiumtea (https://github.com/rondilley)";
+    description = "Dark amber CRT palette with distinct semantic ANSI colors";
     polarity = "dark";
     background = ./wallpaper.jpg;
     backgroundHash = "";
 
     base00 = "0a0a08"; # Background
     base01 = "1a1612"; # Secondary background
-    base02 = "2a1f00"; # Selection
-    base03 = "805500"; # Muted foreground
-    base04 = "996600"; # Dim foreground
+    base02 = "63491f"; # Selection
+    base03 = "9a7b45"; # Muted foreground
+    base04 = "b58a49"; # Dim foreground
     base05 = "ffb000"; # Foreground
-    base06 = "ffcc00"; # Light foreground
-    base07 = "d4aa00"; # Normal white
+    base06 = "ffd27a"; # Light foreground
+    base07 = "f3d28a"; # Normal white
 
-    base08 = "ff8800"; # Red
-    base09 = "ffaa00"; # Orange
-    base0A = "ffd700"; # Yellow
-    base0B = "ffcc00"; # Green
-    base0C = "cc9900"; # Cyan
-    base0D = "cc9900"; # Blue / Hyprland accent
-    base0E = "ff9900"; # Purple
-    base0F = "805500"; # Brown
+    # Distinct semantic hues keep ANSI colors and status accents readable.
+    base08 = "e56b4e"; # Red
+    base09 = "e99545"; # Orange
+    base0A = "e9c66b"; # Yellow
+    base0B = "a7b96a"; # Green
+    base0C = "63aaa2"; # Cyan
+    base0D = "6e9fbe"; # Blue / Hyprland accent
+    base0E = "a987bd"; # Violet
+    base0F = "a87950"; # Brown
 }

@@ -39,6 +39,8 @@ in {
             };
         };
 
+        # Avoid overlapping directory/file ownership in Stylix's Kvantum target.
+        stylix.targets.qt.enable = false;
         stylix.targets.btop.enable = lib.mkIf config.userSettings.misc.enable false;
         stylix.targets.mako.enable = lib.mkIf osConfig.hostSettings.desktop.enable false;
         stylix.targets.nixvim.enable = lib.mkIf config.userSettings.nixvim.enable false;

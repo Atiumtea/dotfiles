@@ -91,14 +91,17 @@ picked with `styling.grub.theme` / `styling.plymouth.theme`. `"stylix"`
 (a flat color) is always a valid value. The `retro` GRUB theme is
 packaged from the `Atiumtea/retrogrub` flake input.
 
-RetroPC keeps the shared Stylix palette for system components and
-adds dedicated presets for btop, Mako, Waybar and NixVim. The
-upstream BM437 bitmap font is installed for Mako; JetBrainsMono
-Nerd Font remains the UI monospace so Waybar icons keep working.
-Hyprlock uses the upstream RetroPC color preset. The upstream
-Ghostty config is included for future use but is not enabled; Kitty
-remains the active terminal. Stylix supplies the wallpaper to Hyprpaper.
-The Retro GRUB theme is packaged from `Atiumtea/retrogrub`.
+RetroPC keeps the dark amber CRT base and uses distinct red, orange,
+yellow, green, cyan, blue and violet accents for terminal ANSI colors
+and other Base16 consumers. Dedicated presets cover btop, Mako, Waybar
+and NixVim. The upstream BM437 bitmap font is installed for Mako;
+JetBrainsMono Nerd Font remains the UI monospace so Waybar icons keep
+working. The Stylix Qt target is disabled for RetroPC to avoid
+conflicting Kvantum directory/file links during Home Manager activation.
+Hyprlock uses the upstream RetroPC color preset. The Ghostty config is
+kept for future use but is not enabled; Kitty remains the active terminal.
+Stylix supplies the wallpaper to Hyprpaper. The Retro GRUB theme is
+packaged from `Atiumtea/retrogrub`.
 
 `lib/default.nix` exposes `collectDirs`, used to auto-discover theme
 directories so the option `enum` never drifts.
