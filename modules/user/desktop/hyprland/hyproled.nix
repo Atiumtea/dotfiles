@@ -168,7 +168,7 @@ in {
 
             interval = lib.mkOption {
                 type = lib.types.str;
-                default = "15min";
+                default = "3min";
                 description = "Interval between automatic steps of active dynamic hyproled effects.";
             };
         };
