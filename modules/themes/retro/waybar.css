@@ -1,0 +1,147 @@
+/* Omarchy RetroPC Waybar palette by Ron Dilley. */
+@define-color foreground #996600;
+@define-color background #1A1612;
+
+* {
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  border-radius: 0;
+  border: none;
+  text-shadow: none;
+  transition: none;
+  box-shadow: none;
+}
+
+window#waybar {
+  background: alpha(@background, 0.94);
+  color: @foreground;
+  padding: 3px 0;
+  border-radius: 6px;
+}
+
+window#waybar.hidden {
+  opacity: 0.98;
+}
+
+tooltip {
+  background: @background;
+  color: @foreground;
+  border: 1px solid @foreground;
+}
+
+tooltip label {
+  color: @foreground;
+}
+
+#window,
+#custom-updates,
+#tray,
+#network,
+#wireplumber,
+#battery,
+#backlight,
+#clock,
+#memory,
+#cpu,
+#custom-launcher,
+#custom-bluetooth,
+#language,
+#mpris {
+  font-size: 12px;
+  color: @foreground;
+  margin: 2px 6px;
+  padding: 3px 7px;
+  border-bottom: 2px solid @foreground;
+}
+
+#workspaces {
+  font-size: 12px;
+  font-weight: 600;
+  color: @foreground;
+  padding: 0 7px;
+  margin: 2px;
+}
+
+#workspaces button {
+  color: @foreground;
+  margin: 3px 1px;
+  min-width: 20px;
+  padding: 0 2px;
+}
+
+#workspaces button:hover,
+#workspaces button.active,
+#workspaces button.focused {
+  background: @foreground;
+  color: @background;
+}
+
+#workspaces button.active,
+#workspaces button.focused {
+  border-bottom: 2px solid @foreground;
+}
+
+#workspaces button.urgent {
+  background: @foreground;
+  color: @background;
+}
+
+#window {
+  background: @background;
+  color: @foreground;
+}
+
+window#waybar.empty #window {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: transparent;
+  border-bottom: none;
+}
+
+#taskbar {
+  background: transparent;
+  padding: 0;
+  margin: 0 6px;
+  border-bottom: none;
+}
+
+#taskbar button {
+  background: transparent;
+  border: none;
+  margin: 2px 1px;
+  padding: 2px;
+  color: @foreground;
+  border-bottom: 2px solid @foreground;
+  min-width: 14px;
+}
+
+#taskbar button.active,
+#taskbar button:hover,
+#taskbar button.urgent {
+  border-bottom-color: @foreground;
+}
+
+#custom-hyproled {
+  color: @foreground;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 22px 22px;
+  min-width: 22px;
+  min-height: 22px;
+  font-size: 1px;
+  padding: 3px 7px;
+  margin: 2px 6px;
+  border-bottom: 2px solid @foreground;
+}
+
+#custom-hyproled.disabled {
+  color: @foreground;
+  background-image: url("@HYPROLED_ICON_DIR@/hyproled-off.svg");
+}
+
+#custom-hyproled.error {
+  color: @foreground;
+  background-image: url("@HYPROLED_ICON_DIR@/hyproled-error.svg");
+}

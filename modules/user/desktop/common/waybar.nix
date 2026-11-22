@@ -8,6 +8,10 @@
 }: let
     hyproledPackage = inputs.hyproled.packages.${pkgs.system}.default;
 
+    retroTheme =
+        osConfig.hostSettings.styling.enable
+        && osConfig.hostSettings.styling.theme == "retro";
+
     # Resolve the symbolic SVG colors from the active Stylix palette at build time.
     # Waybar's background-image rendering is kept independent of GTK recoloring.
     hyproledWaybarIcons =
@@ -270,7 +274,10 @@ in {
 
             style = lib.mkAfter (
                 let
-                    waybarCss = builtins.readFile ./waybar.css;
+                    waybarCss =
+                        if retroTheme
+                        then builtins.readFile ../../../themes/retro/waybar.css
+                        else builtins.readFile ./waybar.css;
                     # Read CSS from the flake source to avoid import-from-derivation.
                     hyproledCss = builtins.readFile "${inputs.hyproled.outPath}/assets/waybar-icons.css";
                 in

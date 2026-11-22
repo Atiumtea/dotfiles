@@ -1,0 +1,46 @@
+{
+    config,
+    osConfig,
+    lib,
+    ...
+}: let
+    retroNixvim = import ../../../themes/retro/nixvim.nix;
+
+    retroTheme =
+        osConfig.hostSettings.styling.enable
+        && osConfig.hostSettings.styling.theme == "retro";
+in {
+    config = lib.mkIf retroTheme {
+        programs.btop = lib.mkIf config.userSettings.misc.enable {
+            settings = {
+                color_theme = "retro";
+                theme_background = lib.mkForce false;
+            };
+            themes.retro = ../../../themes/retro/btop.theme;
+        };
+
+        services.mako = lib.mkIf osConfig.hostSettings.desktop.enable {
+            settings = lib.mkForce (import ../../../themes/retro/mako.nix);
+        };
+
+        programs.nixvim = lib.mkIf config.userSettings.nixvim.enable {
+            colorschemes.nightfox = retroNixvim.nightfox;
+            plugins.lualine.settings.options.theme = retroNixvim.lualine;
+        };
+
+        programs.hyprlock = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {
+            settings."input-field" = {
+                placeholder_text = lib.mkForce ''
+                    <span foreground="##FFCC00">Fear is the mind-killer :3</span>
+                '';
+                fail_text = lib.mkForce ''
+                    <span foreground="##FF8800">The Sandworm got your password! ($ATTEMPTS)</span>
+                '';
+            };
+        };
+
+        stylix.targets.btop.enable = lib.mkIf config.userSettings.misc.enable false;
+        stylix.targets.mako.enable = lib.mkIf osConfig.hostSettings.desktop.enable false;
+        stylix.targets.nixvim.enable = lib.mkIf config.userSettings.nixvim.enable false;
+    };
+}

@@ -91,14 +91,14 @@ picked with `styling.grub.theme` / `styling.plymouth.theme`. `"stylix"`
 (a flat color) is always a valid value. The `retro` GRUB theme is
 packaged from the `Atiumtea/retrogrub` flake input.
 
-The `retro` scheme also installs the upstream BM437 font. RetroPC
-Hyprlock loads its upstream color preset; SDDM and Hyprland continue
-to use the shared Stylix palette. The `retro` GRUB theme is
-packaged from the `Atiumtea/retrogrub` flake input.
-
-The `retro` scheme also installs the upstream BM437 font. RetroPC
-Hyprlock loads its upstream color preset; SDDM and Hyprland continue
-to use the shared Stylix palette.
+RetroPC keeps the shared Stylix palette for system components and
+adds dedicated presets for btop, Mako, Waybar and NixVim. The
+upstream BM437 bitmap font is installed for Mako; JetBrainsMono
+Nerd Font remains the UI monospace so Waybar icons keep working.
+Hyprlock uses the upstream RetroPC color preset. The upstream
+Ghostty config is included for future use but is not enabled; Kitty
+remains the active terminal. Stylix supplies the wallpaper to Hyprpaper.
+The Retro GRUB theme is packaged from `Atiumtea/retrogrub`.
 
 `lib/default.nix` exposes `collectDirs`, used to auto-discover theme
 directories so the option `enum` never drifts.
@@ -135,7 +135,7 @@ modules/
     styling/                     # cursors, fonts, stylix (HM side)
   themes/
     dune/                        # Base16 scheme + wallpaper
-    retro/                       # RetroPC scheme, wallpaper, BM437 font, Hyprlock preset and LICENSE
+    retro/                       # RetroPC scheme, wallpaper, BM437 font and app presets
 scripts/
   apply-boot.sh                  # rebuild wrapper (see below)
   snapshot-config.sh             # runtime diagnostics
@@ -248,8 +248,9 @@ Plus starship/fzf/zoxide integration from their respective HM modules.
 | `SUPER+drag` / right-drag   | move / resize window                  |
 | `XF86Audio*`, `XF86MonBrightness*` | volume / mute / brightness     |
 
-Waybar, hypridle and hyprsunset use the Stylix palette. Hyprlock also
-uses it, except for RetroPC, which loads the upstream color preset.
+Hyprland, hypridle and hyprsunset use the Stylix palette. RetroPC
+adds dedicated btop, Mako, Waybar and NixVim settings; Hyprlock
+loads its upstream color preset. Kitty remains Stylix-themed.
 
 ### NixVim (`leader = Space`)
 

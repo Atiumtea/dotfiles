@@ -8,6 +8,7 @@
         ./cursors.nix
         ./fonts.nix
         ./stylix.nix
+        ./themes/retro.nix
     ];
 
     config = lib.mkIf osConfig.hostSettings.styling.enable {

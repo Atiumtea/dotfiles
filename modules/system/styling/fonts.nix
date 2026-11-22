@@ -52,6 +52,10 @@ in {
         fonts = {
             fontconfig = {
                 enable = true;
+                allowBitmaps =
+                    lib.mkIf
+                    (config.hostSettings.styling.theme == "retro")
+                    (lib.mkForce true);
 
                 defaultFonts = {
                     serif = [cfg.serif.name];
