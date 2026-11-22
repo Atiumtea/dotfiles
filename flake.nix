@@ -113,7 +113,7 @@
         };
 
         hyproled = {
-            url = "github:Atiumtea/hyproled?ref=feature/pixel-shift";
+            url = "github:Atiumtea/hyproled?ref=main";
             inputs.nixpkgs.follows = "nixpkgs";
         };
     };

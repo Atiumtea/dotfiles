@@ -25,7 +25,7 @@
                 (
                     ($classes | index("active") != null)
                     and (
-                        any($classes[]; startswith("mask-"))
+                        any($classes[]; startswith("pixels-"))
                         or (
                             ($classes | index("pixel-shift-enabled") != null)
                             and ($classes | index("pixel-shift-mode-fixed") == null)
