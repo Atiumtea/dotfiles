@@ -1,9 +1,14 @@
 {
+    config,
     osConfig,
     lib,
     ...
-}: {
-    config = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {
+}: let
+    retroTheme =
+        osConfig.hostSettings.styling.enable
+        && osConfig.hostSettings.styling.theme == "retro";
+in {
+    config = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable ({
         programs.hyprlock = {
             enable = true;
             settings = {
@@ -30,6 +35,8 @@
                 background = {
                     monitor = "";
                     blur_passes = 3;
+                } // lib.optionalAttrs retroTheme {
+                    color = "$color";
                 };
 
                 label = [
@@ -64,18 +71,24 @@
                     placeholder_text = "<span foreground=\"##ffaa44\">Fear is the mind-killer :3</span>";
                     fail_text = "<span foreground=\"##ff4444\">The Sandworm got your password! ($ATTEMPTS)</span>";
 
-                    outer_color = lib.mkForce "rgba(224, 139, 53, 0.8)";
-                    inner_color = lib.mkForce "rgba(20, 15, 10, 0.6)";
-                    font_color = lib.mkForce "rgb(255, 230, 200)";
-                    check_color = lib.mkForce "rgb(224, 139, 53)";
-                    fail_color = lib.mkForce "rgb(204, 51, 51)";
-
                     hide_input = false;
                     position = "0,-20";
                     halign = "center";
                     valign = "center";
+                } // lib.optionalAttrs retroTheme {
+                    outer_color = "$outer_color";
+                    inner_color = "$inner_color";
+                    font_color = "$font_color";
+                    check_color = "$check_color";
                 };
+            } // lib.optionalAttrs retroTheme {
+                source = "${config.xdg.configHome}/hypr/hyprlock-retro.conf";
             };
         };
-    };
+    } // lib.optionalAttrs retroTheme {
+        stylix.targets.hyprlock.enable = false;
+
+        xdg.configFile."hypr/hyprlock-retro.conf".source =
+            ../../../themes/retro/hyprlock.conf;
+    });
 }

@@ -6,6 +6,8 @@
 }: let
     cfg = config.hostSettings.styling.fonts;
 
+    retroFont = pkgs.callPackage ../../themes/retro/font.nix {};
+
     fontBlock = default: {
         name = lib.mkOption {
             type = lib.types.str;
@@ -66,7 +68,9 @@ in {
                 cfg.emoji.package
 
                 pkgs.corefonts
-            ];
+            ] ++ lib.optional
+                (config.hostSettings.styling.theme == "retro")
+                retroFont;
 
             fontDir.enable = true;
         };

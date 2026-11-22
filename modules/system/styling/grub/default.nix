@@ -3,13 +3,21 @@
     lib,
     libM,
     pkgs,
+    inputs,
     ...
 }: let
     theme = config.hostSettings.styling.grub.theme;
+
     themePackage =
         if (theme == "stylix")
         then null
-        else pkgs.callPackage ./themes/${theme}/theme.nix {};
+        else if (theme == "retro")
+        then
+            pkgs.callPackage ./themes/retro/theme.nix {
+                src = inputs.retrogrub;
+            }
+        else
+            pkgs.callPackage ./themes/${theme}/theme.nix {};
 
     customThemes = libM.collectDirs ./themes;
 in {

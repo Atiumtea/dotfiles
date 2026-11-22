@@ -44,7 +44,7 @@
 
             styling = {
                 enable = true;
-                theme = "blood-moon";
+                theme = "retro";
 
                 fonts = {
                     serif = {
@@ -55,7 +55,7 @@
 
                 plymouth.enable = true;
                 plymouth.theme = "arasaka";
-                grub.theme = "cybergrub-2077";
+                grub.theme = "retro";
             };
         };
 

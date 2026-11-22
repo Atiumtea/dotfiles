@@ -111,10 +111,13 @@
             url = "github:arkenfox/user.js/144.0";
             flake = false;
         };
-
         hyproled = {
             url = "github:Atiumtea/hyproled?ref=main";
             inputs.nixpkgs.follows = "nixpkgs";
+        };
+        retrogrub = {
+            url = "github:Atiumtea/retrogrub";
+            flake = false;
         };
     };
 }
