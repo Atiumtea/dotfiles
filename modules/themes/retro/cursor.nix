@@ -32,6 +32,40 @@ stdenvNoCC.mkDerivation {
 
         substituteInPlace svg/original/xterm.svg \
             --replace-fail 'stroke-width="17"' 'stroke-width="9"'
+
+        # Reduce resize cursor artwork while preserving its hotspot.
+        shrink_cursor_path() {
+            local file="$1" x="$2" y="$3"
+            local transform="translate($x $y) scale(0.80) translate(-$x -$y)"
+
+            sed -i \
+                "0,/<path d=/s#<path d=#<path transform=\"$transform\" d=#" \
+                "$file"
+        }
+
+        shrink_corner_cursor() {
+            local file="$1" x="$2" y="$3"
+            local transform="translate($x $y) scale(0.80) translate(-$x -$y)"
+
+            # Scale the corner body and the arrow overlay together.
+            sed -i \
+                "0,/<path d=/s#<path d=#<path transform=\"$transform\" d=#" \
+                "$file"
+
+            sed -i \
+                "0,/<g filter=/s#<g filter=#<g transform=\"$transform\" filter=#" \
+                "$file"
+        }
+
+        shrink_cursor_path svg/original/top_side.svg 128 23
+        shrink_cursor_path svg/original/bottom_side.svg 129 234
+        shrink_cursor_path svg/original/left_side.svg 21 128
+        shrink_cursor_path svg/original/right_side.svg 233 128
+
+        shrink_corner_cursor svg/original/top_left_corner.svg 29 24
+        shrink_corner_cursor svg/original/top_right_corner.svg 229 24
+        shrink_corner_cursor svg/original/bottom_left_corner.svg 26 232
+        shrink_corner_cursor svg/original/bottom_right_corner.svg 229 232
     '';
 
     buildPhase = ''
