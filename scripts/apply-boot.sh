@@ -20,6 +20,7 @@
 #   --yes, -y        Skip confirmation prompts (also passed to nh via -a=false)
 #   --host <name>    Override auto-detected hostname (useful for multiple hosts)
 #   --force          Allow building even if the Git tree is dirty (skips tagging)
+#   --trace          Enable detailed nh diagnostics (NH_LOG=nh=trace)
 #   -h, --help       Show this help
 #
 set -euo pipefail
@@ -35,11 +36,12 @@ COMMAND="switch"
 UPDATE_INPUTS=false
 ASSUME_YES=false
 FORCE_BUILD=false
+TRACE_NH=false
 HOST="$(hostname -s 2>/dev/null || echo x1extreme)"
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 print_help() {
-  sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
@@ -50,6 +52,7 @@ while [[ $# -gt 0 ]]; do
     --yes|-y)         ASSUME_YES=true; shift ;;
     --host)           HOST="${2:?--host requires an argument}"; shift 2 ;;
     --force)          FORCE_BUILD=true; shift ;;
+    --trace)          TRACE_NH=true; shift ;;
     -h|--help)        print_help; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; print_help; exit 1 ;;
   esac
@@ -64,6 +67,7 @@ fi
 mkdir -p "$SNAPSHOT_DIR"
 chmod 700 "$SNAPSHOT_DIR"
 LOG_FILE="${SNAPSHOT_DIR}/nixapply-${HOST}-${TIMESTAMP}.log"
+BUILD_LOG_FILE="${SNAPSHOT_DIR}/nixapply-${HOST}-${TIMESTAMP}-build.log"
 
 finish() {
   local status=$?
@@ -159,8 +163,22 @@ confirm() {
 
 run_logged() {
   echo ">>> $*" | tee -a "$LOG_FILE"
-  "$@" 2>&1 | tee -a "$LOG_FILE"
-  return "${PIPESTATUS[0]}"
+  local status=0
+  "$@" 2>&1 | tee -a "$LOG_FILE" || status=${PIPESTATUS[0]}
+  return "$status"
+}
+
+# Keep nh stdout attached to the terminal so its built-in rom UI remains active.
+# NH_ROM_LOG records the underlying build stream separately from terminal redraws.
+run_nh() {
+  echo ">>> $*" | tee -a "$LOG_FILE"
+  local status=0
+  if [[ "$TRACE_NH" == true ]]; then
+    NH_LOG=nh=trace NH_ROM_LOG="$BUILD_LOG_FILE" "$@" 2>>"$LOG_FILE" || status=$?
+  else
+    NH_ROM_LOG="$BUILD_LOG_FILE" "$@" 2>>"$LOG_FILE" || status=$?
+  fi
+  return "$status"
 }
 
 # Get the current generation number from the profile link
@@ -244,7 +262,11 @@ apply_via_nh() {
   echo "Host:   ${HOST}"
   echo "Flake:  ${DOTFILES}"
   echo "Action: nh os ${action} (${verb})"
-  echo "Log:    ${LOG_FILE}"
+  echo "Log:       ${LOG_FILE}"
+  echo "Build log: ${BUILD_LOG_FILE}"
+  if [[ "$TRACE_NH" == true ]]; then
+    echo "nh trace:  enabled"
+  fi
   echo
 
   if [[ "$action" != "build" ]]; then
@@ -254,14 +276,17 @@ apply_via_nh() {
   local -a args=(nh os "$action" --hostname "$HOST" "$DOTFILES")
   $UPDATE_INPUTS && args+=(--update)
   $ASSUME_YES && args+=(--ask=false)
-  args+=(--max-jobs 1 --cores 2)
+  # Use the Nix daemon configuration as the single source of truth for build limits.
 
-  run_logged "${args[@]}"
-  local status=$?
+  local status=0
+  run_nh "${args[@]}" || status=$?
 
   if [[ $status -ne 0 ]]; then
     echo
     echo "ERROR: 'nh os ${action}' failed (exit ${status}). Log: ${LOG_FILE}" >&2
+    echo "Nix build log: ${BUILD_LOG_FILE}" >&2
+    echo "Last nh diagnostics:" >&2
+    tail -n 25 "$LOG_FILE" >&2 || true
     echo "Please review the log. If this was a pre-switch inhibitor, use 'boot' instead of 'switch'." >&2
     return "$status"
   fi
