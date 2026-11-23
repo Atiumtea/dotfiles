@@ -17,7 +17,7 @@
 #   info      Show current generation and nh status
 #
 # Options:
-#   --yes, -y        Skip confirmation prompts (also passed to nh via -a=false)
+#   --yes, -y        Skip confirmation prompts, including NH's confirmation
 #   --host <name>    Override auto-detected hostname (useful for multiple hosts)
 #   --force          Allow building even if the Git tree is dirty (skips tagging)
 #   --trace          Enable detailed nh diagnostics (NH_LOG=nh=trace)
@@ -283,7 +283,10 @@ apply_via_nh() {
 
   local -a args=(nh os "$action" --hostname "$HOST" "$DOTFILES")
   $UPDATE_INPUTS && args+=(--update)
-  $ASSUME_YES && args+=(--ask=false)
+
+  # Disable NH's --ask confirmation through the environment when --yes was requested.
+  $ASSUME_YES && export NH_ASK=0
+
   # Use the Nix daemon configuration as the single source of truth for build limits.
 
   local status=0
