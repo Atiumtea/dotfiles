@@ -43,6 +43,9 @@
 
         services.blueman-applet.enable = true;
 
+        dconf.settings."org/blueman/general".plugin-list = ["!StatusIcon"];
+        dconf.settings."org/blueman/general".plugin-list = ["!StatusIcon"];
+
         home.sessionVariables = {
             LIBVIRT_DEFAULT_URI = "qemu:///system";
         };

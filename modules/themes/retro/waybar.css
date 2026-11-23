@@ -63,6 +63,7 @@ tooltip label {
 
 #network.disconnected {
   color: @retro-critical;
+  border-bottom-color: @retro-critical;
 }
 
 #workspaces {
@@ -168,27 +169,39 @@ window#waybar.empty #window {
   border-bottom: 2px solid @foreground;
 }
 
-#custom-hyproled.disabled {
-  color: @foreground;
-  background-image: url("@HYPROLED_ICON_DIR@/hyproled-off.svg");
-}
-
-#custom-hyproled.error {
-  color: @foreground;
-  background-image: url("@HYPROLED_ICON_DIR@/hyproled-error.svg");
-}
-
-#battery {
+#custom-hyproled.active {
   color: @retro-success;
   border-bottom-color: @retro-success;
 }
 
-#battery.warning {
+#custom-hyproled.disabled {
+  color: @foreground;
+  border-bottom-color: @foreground;
+  background-image: url("@HYPROLED_ICON_DIR@/hyproled-off.svg");
+}
+
+#custom-hyproled.error {
+  color: @retro-critical;
+  border-bottom-color: @retro-critical;
+  background-image: url("@HYPROLED_ICON_DIR@/hyproled-error.svg");
+}
+
+#battery {
+  color: @foreground;
+  border-bottom-color: @foreground;
+}
+
+#battery.warning:not(.charging) {
   color: @retro-warning;
   border-bottom-color: @retro-warning;
 }
 
-#battery.critical {
+#battery.critical:not(.charging) {
   color: @retro-critical;
   border-bottom-color: @retro-critical;
+}
+
+#battery.charging {
+  color: @retro-success;
+  border-bottom-color: @retro-success;
 }

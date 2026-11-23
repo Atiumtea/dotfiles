@@ -10,6 +10,12 @@
     retroTheme =
         osConfig.hostSettings.styling.enable
         && osConfig.hostSettings.styling.theme == "retro";
+
+    retroCursor = pkgs.callPackage ../../../themes/retro/cursor.nix {
+        baseColor = config.lib.stylix.colors.base05;
+        outlineColor = config.lib.stylix.colors.base02;
+        watchBackgroundColor = config.lib.stylix.colors.base00;
+    };
 in {
     config = lib.mkIf retroTheme {
         programs.btop = lib.mkIf config.userSettings.misc.enable {
@@ -46,8 +52,8 @@ in {
         };
 
         userSettings.styling.cursor = {
-            name = lib.mkForce "Bibata-Original-Amber";
-            package = lib.mkForce pkgs.bibata-cursors;
+            name = lib.mkForce "Bibata-RetroPC";
+            package = lib.mkForce retroCursor;
         };
 
         wayland.windowManager.hyprland.settings = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {

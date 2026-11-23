@@ -200,10 +200,12 @@ in {
 
                     "custom/bluetooth" = {
                         format = " {}";
+                        on-click = "blueman-manager";
                         exec = "${config.xdg.configHome}/waybar/bluetooth-display.sh";
                         interval = 10;
                         return-type = "plain";
                         tooltip = false;
+                        on-click = "blueman-manager";
                         max-length = 25;
                     };
 

@@ -26,7 +26,12 @@
                 settings = {
                     "$schema" = "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json";
                     logo = {
-                        source = "nixos_small";
+                        source =
+                            if
+                                osConfig.hostSettings.styling.enable
+                                && osConfig.hostSettings.styling.theme == "retro"
+                            then "nixos_old_small"
+                            else "nixos_small";
                         padding.top = 1;
                         color =
                             if osConfig.hostSettings.styling.enable

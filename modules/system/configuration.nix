@@ -104,6 +104,10 @@
             };
         };
 
+        programs.dconf.enable = true;
+
+        programs.dconf.enable = true;
+
         networking = {
             networkmanager.enable = true;
             firewall.enable = false;
