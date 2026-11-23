@@ -205,7 +205,6 @@ in {
                         interval = 10;
                         return-type = "plain";
                         tooltip = false;
-                        on-click = "blueman-manager";
                         max-length = 25;
                     };
 

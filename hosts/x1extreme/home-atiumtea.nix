@@ -43,8 +43,8 @@
 
         services.blueman-applet.enable = true;
 
-        dconf.settings."org/blueman/general".plugin-list = ["!StatusIcon"];
-        dconf.settings."org/blueman/general".plugin-list = ["!StatusIcon"];
+        # ShowConnected depends on StatusIcon and would load it again.
+        dconf.settings."org/blueman/general".plugin-list = ["!StatusIcon" "!ShowConnected"];
 
         home.sessionVariables = {
             LIBVIRT_DEFAULT_URI = "qemu:///system";

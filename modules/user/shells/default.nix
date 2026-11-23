@@ -36,8 +36,14 @@
                         color =
                             if osConfig.hostSettings.styling.enable
                             then {
-                                "1" = "#${config.lib.stylix.colors.base0A}";
-                                "2" = "#${config.lib.stylix.colors.base09}";
+                                "1" =
+                                    if osConfig.hostSettings.styling.theme == "retro"
+                                    then "#${config.lib.stylix.colors.base0A}"
+                                    else "#${config.lib.stylix.colors.base0D}";
+                                "2" =
+                                    if osConfig.hostSettings.styling.theme == "retro"
+                                    then "#${config.lib.stylix.colors.base09}"
+                                    else "#${config.lib.stylix.colors.base0C}";
                             }
                             else {};
                     };
