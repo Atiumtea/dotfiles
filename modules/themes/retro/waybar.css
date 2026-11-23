@@ -61,6 +61,10 @@ tooltip label {
   border-bottom: 2px solid @foreground;
 }
 
+#network.disconnected {
+  color: @retro-critical;
+}
+
 #workspaces {
   font-size: 12px;
   font-weight: 600;

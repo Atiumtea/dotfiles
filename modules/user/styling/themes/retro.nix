@@ -21,7 +21,12 @@ in {
         };
 
         services.mako = lib.mkIf osConfig.hostSettings.desktop.enable {
-            settings = lib.mkForce (import ../../../themes/retro/mako.nix);
+            settings = lib.mkForce (
+                (import ../../../themes/retro/mako.nix)
+                // {
+                    font = osConfig.hostSettings.styling.fonts.monospace.name;
+                }
+            );
         };
 
         programs.nixvim = lib.mkIf config.userSettings.nixvim.enable {
@@ -41,8 +46,8 @@ in {
         };
 
         userSettings.styling.cursor = {
-            name = lib.mkForce "Hackneyed";
-            package = lib.mkForce pkgs.hackneyed;
+            name = lib.mkForce "Bibata-Original-Amber";
+            package = lib.mkForce pkgs.bibata-cursors;
         };
 
         wayland.windowManager.hyprland.settings = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {

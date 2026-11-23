@@ -47,6 +47,8 @@
                 theme = "retro";
 
                 fonts = {
+                    monospacePreset = "swanston";
+
                     serif = {
                         name = "Fira Sans";
                         package = pkgs.fira-sans;

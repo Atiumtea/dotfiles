@@ -6,11 +6,26 @@
 }: let
     cfg = config.hostSettings.styling.fonts;
 
-    retroTheme = config.hostSettings.styling.theme == "retro";
+    fontPresets = {
+        jetbrains-mono-nerd = {
+            name = "JetBrainsMono Nerd Font";
+            package = pkgs.nerd-fonts.jetbrains-mono;
+        };
 
-    retroFont = {
-        name = "PxPlus IBM XGA-AI 12x20";
-        package = pkgs.ultimate-oldschool-pc-font-pack;
+        pxplus-ibm-xga-ai-12x20 = {
+            name = "PxPlus IBM XGA-AI 12x20";
+            package = pkgs.ultimate-oldschool-pc-font-pack;
+        };
+
+        swanston = {
+            name = "Swanston";
+            package = pkgs.callPackage ../../themes/retro/swanston.nix {};
+        };
+
+        terminus = {
+            name = "Terminus (TTF)";
+            package = pkgs.terminus_font_ttf;
+        };
     };
 
     fontBlock = default: {
@@ -30,6 +45,12 @@ in {
     options = {
         hostSettings = {
             styling.fonts = {
+                monospacePreset = lib.mkOption {
+                    type = lib.types.enum (builtins.attrNames fontPresets);
+                    default = "jetbrains-mono-nerd";
+                    description = "System-wide monospace font; Waybar always uses JetBrainsMono Nerd Font";
+                };
+
                 serif = fontBlock {
                     name = "Fira Sans";
                     package = pkgs.fira-sans;
@@ -40,10 +61,7 @@ in {
                     package = pkgs.fira-sans;
                 };
 
-                monospace = fontBlock {
-                    name = "JetBrainsMono Nerd Font";
-                    package = pkgs.nerd-fonts.jetbrains-mono;
-                };
+                monospace = fontBlock fontPresets.${cfg.monospacePreset};
 
                 emoji = fontBlock {
                     name = "Twitter Color Emoji";
@@ -53,42 +71,31 @@ in {
         };
     };
 
-    config = lib.mkMerge [
-        (lib.mkIf config.hostSettings.styling.enable {
-            fonts = {
-                fontconfig = {
-                    enable = true;
+    config = lib.mkIf config.hostSettings.styling.enable {
+        fonts = {
+            fontconfig = {
+                enable = true;
 
-                    defaultFonts = {
-                        serif = [cfg.serif.name];
-                        sansSerif = [cfg.sansSerif.name];
-                        monospace = [cfg.monospace.name];
-                        emoji = [cfg.emoji.name];
-                    };
+                defaultFonts = {
+                    serif = [cfg.serif.name];
+                    sansSerif = [cfg.sansSerif.name];
+                    monospace = [cfg.monospace.name];
+                    emoji = [cfg.emoji.name];
                 };
-
-                packages = lib.unique (
-                    [
-                        cfg.serif.package
-                        cfg.sansSerif.package
-                        cfg.monospace.package
-                        cfg.emoji.package
-
-                        pkgs.corefonts
-                    ]
-                    ++ lib.optional retroTheme pkgs.nerd-fonts.jetbrains-mono
-                );
-
-                fontDir.enable = true;
             };
-        })
-        (lib.mkIf (config.hostSettings.styling.enable && retroTheme) {
-            hostSettings.styling.fonts.serif.name = lib.mkForce retroFont.name;
-            hostSettings.styling.fonts.serif.package = lib.mkForce retroFont.package;
-            hostSettings.styling.fonts.sansSerif.name = lib.mkForce retroFont.name;
-            hostSettings.styling.fonts.sansSerif.package = lib.mkForce retroFont.package;
-            hostSettings.styling.fonts.monospace.name = lib.mkForce retroFont.name;
-            hostSettings.styling.fonts.monospace.package = lib.mkForce retroFont.package;
-        })
-    ];
+
+            packages = lib.unique [
+                cfg.serif.package
+                cfg.sansSerif.package
+                cfg.monospace.package
+                cfg.emoji.package
+
+                pkgs.corefonts
+                # Keep Nerd Font available for Waybar, regardless of the selected system font.
+                pkgs.nerd-fonts.jetbrains-mono
+            ];
+
+            fontDir.enable = true;
+        };
+    };
 }

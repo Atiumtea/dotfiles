@@ -1,4 +1,5 @@
 {
+    config,
     lib,
     pkgs,
     osConfig,
@@ -27,10 +28,13 @@
                     logo = {
                         source = "nixos_small";
                         padding.top = 1;
-                        color = {
-                            "1" = "red";
-                            "2" = "red";
-                        };
+                        color =
+                            if osConfig.hostSettings.styling.enable
+                            then {
+                                "1" = "#${config.lib.stylix.colors.base0D}";
+                                "2" = "#${config.lib.stylix.colors.base0C}";
+                            }
+                            else {};
                     };
                     display.separator = "  ->  ";
                     modules = [
