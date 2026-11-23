@@ -39,7 +39,7 @@ stdenvNoCC.mkDerivation {
 
         mkdir -p bitmaps
 
-        cbmp \
+        CI=1 NO_COLOR=1 cbmp \
             --dir svg/original \
             --out bitmaps/Bibata-RetroPC \
             --baseColor "#${baseColor}" \
