@@ -112,13 +112,14 @@ in {
                 local fileManager = terminal .. " --class yazi -- yazi"
                 local menu = ${builtins.toJSON "rofi -show drun -theme ${config.xdg.configHome}/rofi/launcher.rasi"}
                 local powerMenu = ${builtins.toJSON "${config.xdg.configHome}/rofi/powermenu.sh"}
-                local setCursor = ${builtins.toJSON "hyprctl setcursor ${config.userSettings.styling.cursor.name} ${toString config.userSettings.styling.cursor.size}"}
 
                 local mainMod = "SUPER"
 
                 -- Environment
                 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
                 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
+                hl.env("XCURSOR_THEME", ${builtins.toJSON config.userSettings.styling.cursor.name})
+                hl.env("XCURSOR_SIZE", ${builtins.toJSON (toString config.userSettings.styling.cursor.size)})
 
                 -- Animation curves
                 hl.curve("easeOutQuint", {
@@ -168,7 +169,6 @@ in {
                 hl.on("hyprland.start", function()
                     hl.exec_cmd("waybar")
                     hl.exec_cmd("hyproled --restore")
-                    hl.exec_cmd(setCursor)
 
                     hl.exec_cmd(browser, { workspace = "1 silent" })
                     hl.exec_cmd(terminal, { workspace = "2 silent" })

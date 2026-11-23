@@ -12,7 +12,7 @@
     base02 = "63491f"; # Selection
     base03 = "9a7b45"; # Muted foreground
     base04 = "b58a49"; # Dim foreground
-    base05 = "ffb000"; # Foreground
+    base05 = "d6ad68"; # Foreground
     base06 = "ffd27a"; # Light foreground
     base07 = "f3d28a"; # Normal white
 

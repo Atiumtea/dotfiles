@@ -47,7 +47,7 @@
                 theme = "retro";
 
                 fonts = {
-                    monospacePreset = "swanston";
+                    monospacePreset = "terminus";
 
                     serif = {
                         name = "Fira Sans";
