@@ -168,16 +168,24 @@ run_logged() {
   return "$status"
 }
 
-# Keep nh stdout attached to the terminal so its built-in rom UI remains active.
-# NH_ROM_LOG records the underlying build stream separately from terminal redraws.
 run_nh() {
   echo ">>> $*" | tee -a "$LOG_FILE"
   local status=0
+
+  # Keep both streams attached to the terminal:
+  # nh's ROM renderer uses stderr for its live interface.
+  # NH_ROM_LOG records the underlying Nix build stream separately.
   if [[ "$TRACE_NH" == true ]]; then
-    NH_LOG=nh=trace NH_ROM_LOG="$BUILD_LOG_FILE" "$@" 2>>"$LOG_FILE" || status=$?
+    NH_ROM=1 \
+      NH_LOG=nh=trace \
+      NH_ROM_LOG="$BUILD_LOG_FILE" \
+      "$@" || status=$?
   else
-    NH_ROM_LOG="$BUILD_LOG_FILE" "$@" 2>>"$LOG_FILE" || status=$?
+    NH_ROM=1 \
+      NH_ROM_LOG="$BUILD_LOG_FILE" \
+      "$@" || status=$?
   fi
+
   return "$status"
 }
 
