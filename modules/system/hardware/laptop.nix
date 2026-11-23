@@ -18,6 +18,11 @@
             powerManagement.finegrained = true;
         };
 
+        services = {
+            upower.enable = true;
+            power-profiles-daemon.enable = true;
+        };
+
         environment.systemPackages = lib.optional config.hostSettings.hardware.graphics.enable pkgs.brightnessctl;
     };
 }

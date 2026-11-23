@@ -29,7 +29,7 @@ window#waybar.hidden {
 #clock,
 #memory,
 #cpu,
-#custom-launcher,
+#custom-control,
 #custom-bluetooth,
 #language,
 #mpris {
@@ -192,9 +192,9 @@ window#waybar.empty #window {
 }
 
 /* ======================================================== */
-/* Launcher */
+/* NixOS Control */
 /* ======================================================== */
-#custom-launcher {
+#custom-control {
   color: @base0A;
   border-bottom-color: @base0A;
   font-size: 12px;

@@ -52,9 +52,26 @@
             ${builtins.readFile ./waybar-hyproled-control.sh}
         '';
     };
+
+    nixosControl = pkgs.writeShellApplication {
+        name = "waybar-nixos-control";
+        runtimeInputs = [
+            pkgs.kitty
+            osConfig.programs.nh.package
+            pkgs.rofi
+        ];
+        text = ''
+            export NIXOS_CONTROL_ROFI_THEME="${config.xdg.configHome}/rofi/hyproled.rasi"
+            export NH_FLAKE="${config.home.homeDirectory}/dotfiles"
+            ${builtins.readFile ./waybar-nixos-control.sh}
+        '';
+    };
 in {
     config = lib.mkIf osConfig.hostSettings.desktop.enable {
-        home.packages = [hyproledPackage];
+        home.packages = [
+            hyproledPackage
+            pkgs.gnome-power-manager
+        ];
 
         programs.waybar = {
             enable = true;
@@ -74,7 +91,7 @@ in {
                     margin-left = 4;
 
                     modules-left = [
-                        "custom/launcher"
+                        "custom/control"
                         "backlight"
                         "wireplumber"
                         "cpu"
@@ -154,7 +171,12 @@ in {
                         rotate = 0;
                         format-charging = " {capacity}%";
                         format-plugged = " {capacity}%";
-                        format-alt = "{time} {icon}";
+                        smooth-power = true;
+                        smooth-power-time-constant = 260.0;
+                        tooltip-format = "{timeTo}";
+                        on-click = "gnome-power-statistics";
+                        on-click-right = "powerprofilesctl set power-saver";
+                        on-click-middle = "powerprofilesctl set balanced";
                         format-icons = [
                             "󰂎"
                             "󰁺"
@@ -194,8 +216,11 @@ in {
                         max-length = 20;
                     };
 
-                    "custom/launcher" = {
+                    "custom/control" = {
                         format = " ";
+                        tooltip = true;
+                        tooltip-format = "NixOS Control Center";
+                        on-click = "${nixosControl}/bin/waybar-nixos-control";
                     };
 
                     "custom/bluetooth" = {
