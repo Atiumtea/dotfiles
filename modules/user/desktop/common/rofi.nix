@@ -29,8 +29,8 @@ in {
                     foreground = mkRgb "base05";
 
                     background-color = mkRgb "base00";
-                    separatorcolor = mkLiteral "@foreground";
-                    border-color = mkLiteral "@foreground";
+                    separatorcolor = mkRgb "base04";
+                    border-color = mkRgb "base04";
                     selected-normal-foreground = mkLiteral "@lightbg";
                     selected-normal-background = mkLiteral "@lightfg";
                     selected-active-foreground = mkLiteral "@background";

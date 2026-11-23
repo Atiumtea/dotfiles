@@ -46,7 +46,10 @@ in {
                             {
                                 text = "cmd[update:1000] echo -e \"$(LC_TIME=en_US.UTF-8 date +\"%A, %B %d\")\"";
                                 font_size = 25;
-                                font_family = "SF Pro Display Semibold";
+                                font_family =
+                                    if retroTheme
+                                    then osConfig.hostSettings.styling.fonts.sansSerif.name
+                                    else "SF Pro Display Semibold";
                                 position = "0, 30%";
                                 halign = "center";
                                 valign = "center";
@@ -55,7 +58,10 @@ in {
                             {
                                 text = "cmd[update:1000] echo \"<span>$(date +\"%H:%M\")</span>\"";
                                 font_size = 120;
-                                font_family = "SF Pro Display Bold";
+                                font_family =
+                                    if retroTheme
+                                    then osConfig.hostSettings.styling.fonts.sansSerif.name
+                                    else "SF Pro Display Bold";
                                 position = "0, 20%";
                                 halign = "center";
                                 valign = "center";

@@ -1,6 +1,11 @@
 /* Omarchy RetroPC Waybar palette by Ron Dilley. */
 @define-color foreground #B58A49;
 @define-color background #1A1612;
+@define-color retro-active #@RETRO_ACTIVE@;
+@define-color retro-muted #@RETRO_MUTED@;
+@define-color retro-success #@RETRO_SUCCESS@;
+@define-color retro-warning #@RETRO_WARNING@;
+@define-color retro-critical #@RETRO_CRITICAL@;
 
 * {
   padding: 0;
@@ -11,6 +16,7 @@
   text-shadow: none;
   transition: none;
   box-shadow: none;
+  font-family: "JetBrainsMono Nerd Font";
 }
 
 window#waybar {
@@ -70,21 +76,28 @@ tooltip label {
   padding: 0 2px;
 }
 
-#workspaces button:hover,
-#workspaces button.active,
-#workspaces button.focused {
-  background: @foreground;
-  color: @background;
+#workspaces button:not(.empty):not(.active):not(.urgent) {
+  background: alpha(@retro-muted, 0.12);
+  color: @retro-muted;
+  border-bottom: 2px solid @retro-muted;
+}
+
+#workspaces button:hover:not(.active):not(.urgent) {
+  background: alpha(@retro-active, 0.14);
+  color: @retro-active;
 }
 
 #workspaces button.active,
 #workspaces button.focused {
-  border-bottom: 2px solid @foreground;
+  background: alpha(@retro-active, 0.18);
+  color: @retro-active;
+  border-bottom: 2px solid @retro-active;
 }
 
 #workspaces button.urgent {
-  background: @foreground;
-  color: @background;
+  background: alpha(@retro-critical, 0.16);
+  color: @retro-critical;
+  border-bottom: 2px solid @retro-critical;
 }
 
 #window {
@@ -112,15 +125,30 @@ window#waybar.empty #window {
   border: none;
   margin: 2px 1px;
   padding: 2px;
-  color: @foreground;
-  border-bottom: 2px solid @foreground;
+  color: @retro-muted;
+  border-bottom: 2px solid @retro-muted;
   min-width: 14px;
 }
 
-#taskbar button.active,
-#taskbar button:hover,
-#taskbar button.urgent {
-  border-bottom-color: @foreground;
+#taskbar button.active {
+  background: alpha(@retro-active, 0.18);
+  color: @retro-active;
+  border-bottom: 2px solid @retro-active;
+}
+
+#taskbar button.minimized {
+  opacity: 0.65;
+  color: @retro-muted;
+  border-bottom-color: @retro-muted;
+}
+
+#taskbar button.maximized,
+#taskbar button.fullscreen {
+  border-bottom-color: @retro-active;
+}
+
+#taskbar button:hover:not(.active) {
+  background: alpha(@retro-muted, 0.14);
 }
 
 #custom-hyproled {
@@ -144,4 +172,19 @@ window#waybar.empty #window {
 #custom-hyproled.error {
   color: @foreground;
   background-image: url("@HYPROLED_ICON_DIR@/hyproled-error.svg");
+}
+
+#battery {
+  color: @retro-success;
+  border-bottom-color: @retro-success;
+}
+
+#battery.warning {
+  color: @retro-warning;
+  border-bottom-color: @retro-warning;
+}
+
+#battery.critical {
+  color: @retro-critical;
+  border-bottom-color: @retro-critical;
 }

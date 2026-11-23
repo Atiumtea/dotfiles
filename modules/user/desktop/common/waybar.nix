@@ -282,8 +282,22 @@ in {
                     hyproledCss = builtins.readFile "${inputs.hyproled.outPath}/assets/waybar-icons.css";
                 in
                     lib.replaceStrings
-                    ["@HYPROLED_ICON_DIR@"]
-                    ["${hyproledWaybarIcons}"]
+                    [
+                        "@HYPROLED_ICON_DIR@"
+                        "@RETRO_ACTIVE@"
+                        "@RETRO_MUTED@"
+                        "@RETRO_SUCCESS@"
+                        "@RETRO_WARNING@"
+                        "@RETRO_CRITICAL@"
+                    ]
+                    [
+                        "${hyproledWaybarIcons}"
+                        "${config.lib.stylix.colors.base0A}"
+                        "${config.lib.stylix.colors.base03}"
+                        "${config.lib.stylix.colors.base0B}"
+                        "${config.lib.stylix.colors.base09}"
+                        "${config.lib.stylix.colors.base08}"
+                    ]
                     (waybarCss + "\n" + hyproledCss)
             );
         };

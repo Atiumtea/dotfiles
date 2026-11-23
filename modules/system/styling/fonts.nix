@@ -6,7 +6,12 @@
 }: let
     cfg = config.hostSettings.styling.fonts;
 
-    retroFont = pkgs.callPackage ../../themes/retro/font.nix {};
+    retroTheme = config.hostSettings.styling.theme == "retro";
+
+    retroFont = {
+        name = "PxPlus IBM XGA-AI 12x20";
+        package = pkgs.ultimate-oldschool-pc-font-pack;
+    };
 
     fontBlock = default: {
         name = lib.mkOption {
@@ -48,37 +53,42 @@ in {
         };
     };
 
-    config = lib.mkIf config.hostSettings.styling.enable {
-        fonts = {
-            fontconfig = {
-                enable = true;
-                allowBitmaps =
-                    lib.mkIf
-                    (config.hostSettings.styling.theme == "retro")
-                    (lib.mkForce true);
+    config = lib.mkMerge [
+        (lib.mkIf config.hostSettings.styling.enable {
+            fonts = {
+                fontconfig = {
+                    enable = true;
 
-                defaultFonts = {
-                    serif = [cfg.serif.name];
-                    sansSerif = [cfg.sansSerif.name];
-                    monospace = [cfg.monospace.name];
-                    emoji = [cfg.emoji.name];
+                    defaultFonts = {
+                        serif = [cfg.serif.name];
+                        sansSerif = [cfg.sansSerif.name];
+                        monospace = [cfg.monospace.name];
+                        emoji = [cfg.emoji.name];
+                    };
                 };
+
+                packages = lib.unique (
+                    [
+                        cfg.serif.package
+                        cfg.sansSerif.package
+                        cfg.monospace.package
+                        cfg.emoji.package
+
+                        pkgs.corefonts
+                    ]
+                    ++ lib.optional retroTheme pkgs.nerd-fonts.jetbrains-mono
+                );
+
+                fontDir.enable = true;
             };
-
-            packages =
-                [
-                    cfg.serif.package
-                    cfg.sansSerif.package
-                    cfg.monospace.package
-                    cfg.emoji.package
-
-                    pkgs.corefonts
-                ]
-                ++ lib.optional
-                (config.hostSettings.styling.theme == "retro")
-                retroFont;
-
-            fontDir.enable = true;
-        };
-    };
+        })
+        (lib.mkIf (config.hostSettings.styling.enable && retroTheme) {
+            hostSettings.styling.fonts.serif.name = lib.mkForce retroFont.name;
+            hostSettings.styling.fonts.serif.package = lib.mkForce retroFont.package;
+            hostSettings.styling.fonts.sansSerif.name = lib.mkForce retroFont.name;
+            hostSettings.styling.fonts.sansSerif.package = lib.mkForce retroFont.package;
+            hostSettings.styling.fonts.monospace.name = lib.mkForce retroFont.name;
+            hostSettings.styling.fonts.monospace.package = lib.mkForce retroFont.package;
+        })
+    ];
 }

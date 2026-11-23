@@ -1,6 +1,7 @@
 {
     config,
     osConfig,
+    pkgs,
     lib,
     ...
 }: let
@@ -36,6 +37,22 @@ in {
                 fail_text = lib.mkForce ''
                     <span foreground="##FF8800">The Sandworm got your password! ($ATTEMPTS)</span>
                 '';
+            };
+        };
+
+        userSettings.styling.cursor = {
+            name = lib.mkForce "Hackneyed";
+            package = lib.mkForce pkgs.hackneyed;
+        };
+
+        wayland.windowManager.hyprland.settings = lib.mkIf osConfig.hostSettings.desktop.hyprland.enable {
+            config = {
+                general."col.active_border" = lib.mkForce "rgb(${config.lib.stylix.colors.base0A})";
+                group = {
+                    "col.border_active" = lib.mkForce "rgb(${config.lib.stylix.colors.base0A})";
+                    "col.border_locked_active" = lib.mkForce "rgb(${config.lib.stylix.colors.base0A})";
+                    groupbar."col.active" = lib.mkForce "rgb(${config.lib.stylix.colors.base0A})";
+                };
             };
         };
 

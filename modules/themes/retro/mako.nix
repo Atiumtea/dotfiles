@@ -8,7 +8,7 @@
     height = 110;
     padding = 10;
     border-size = 2;
-    font = "Bm437 IBM XGA-AI 12x23";
+    font = "PxPlus IBM XGA-AI 12x20";
     anchor = "top-right";
     outer-margin = 20;
     default-timeout = 5000;
