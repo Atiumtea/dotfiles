@@ -36,4 +36,3 @@ in
             platforms = lib.platforms.all;
         };
     }
-}
