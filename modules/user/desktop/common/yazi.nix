@@ -1,7 +1,4 @@
-{
-    pkgs,
-    ...
-}: {
+{pkgs, ...}: {
     programs.yazi = {
         plugins = {
             git = {

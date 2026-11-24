@@ -161,37 +161,39 @@ in {
                         min-length = 6;
                     };
 
-                    battery = {
-                        states = {
-                            good = 95;
-                            warning = 30;
-                            critical = 20;
+                    battery =
+                        {
+                            states = {
+                                good = 95;
+                                warning = 30;
+                                critical = 20;
+                            };
+                            format = "{icon} {capacity}%";
+                            rotate = 0;
+                            format-charging = " {capacity}%";
+                            format-plugged = " {capacity}%";
+                            smooth-power = true;
+                            smooth-power-time-constant = 260.0;
+                            tooltip-format = "{timeTo}";
+                            on-click-right = "powerprofilesctl set power-saver";
+                            on-click-middle = "powerprofilesctl set balanced";
+                            format-icons = [
+                                "󰂎"
+                                "󰁺"
+                                "󰁻"
+                                "󰁼"
+                                "󰁽"
+                                "󰁾"
+                                "󰁿"
+                                "󰂀"
+                                "󰂁"
+                                "󰂂"
+                                "󰁹"
+                            ];
+                        }
+                        // lib.optionalAttrs config.userSettings.wattage.enable {
+                            on-click = lib.getExe wattagePackage;
                         };
-                        format = "{icon} {capacity}%";
-                        rotate = 0;
-                        format-charging = " {capacity}%";
-                        format-plugged = " {capacity}%";
-                        smooth-power = true;
-                        smooth-power-time-constant = 260.0;
-                        tooltip-format = "{timeTo}";
-                        on-click-right = "powerprofilesctl set power-saver";
-                        on-click-middle = "powerprofilesctl set balanced";
-                        format-icons = [
-                            "󰂎"
-                            "󰁺"
-                            "󰁻"
-                            "󰁼"
-                            "󰁽"
-                            "󰁾"
-                            "󰁿"
-                            "󰂀"
-                            "󰂁"
-                            "󰂂"
-                            "󰁹"
-                        ];
-                    } // lib.optionalAttrs config.userSettings.wattage.enable {
-                        on-click = lib.getExe wattagePackage;
-                    };
 
                     clock = {
                         format = "{:%H:%M}";
