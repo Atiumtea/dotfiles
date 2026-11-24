@@ -115,6 +115,10 @@
             url = "github:Atiumtea/hyproled?ref=main";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        wattage = {
+            url = "github:v81d/wattage";
+            inputs.nixpkgs.follows = "nixpkgs";
+        };
         retrogrub = {
             url = "github:Atiumtea/retrogrub";
             flake = false;

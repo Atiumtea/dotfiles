@@ -7,6 +7,8 @@
     imports = [
         ./rofi.nix
         ./waybar.nix
+        ./wattage.nix
+        ./yazi.nix
     ];
 
     config = lib.mkIf osConfig.hostSettings.desktop.enable {

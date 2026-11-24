@@ -7,6 +7,7 @@
     ...
 }: let
     hyproledPackage = inputs.hyproled.packages.${pkgs.system}.default;
+    wattagePackage = inputs.wattage.packages.${pkgs.system}.default;
 
     retroTheme =
         osConfig.hostSettings.styling.enable
@@ -70,7 +71,6 @@ in {
     config = lib.mkIf osConfig.hostSettings.desktop.enable {
         home.packages = [
             hyproledPackage
-            pkgs.gnome-power-manager
         ];
 
         programs.waybar = {
@@ -174,7 +174,6 @@ in {
                         smooth-power = true;
                         smooth-power-time-constant = 260.0;
                         tooltip-format = "{timeTo}";
-                        on-click = "gnome-power-statistics";
                         on-click-right = "powerprofilesctl set power-saver";
                         on-click-middle = "powerprofilesctl set balanced";
                         format-icons = [
@@ -190,6 +189,8 @@ in {
                             "󰂂"
                             "󰁹"
                         ];
+                    } // lib.optionalAttrs config.userSettings.wattage.enable {
+                        on-click = lib.getExe wattagePackage;
                     };
 
                     clock = {

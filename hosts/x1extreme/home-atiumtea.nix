@@ -20,6 +20,7 @@
             };
 
             waybar.toggle.enable = true;
+            wattage.enable = true;
 
             vscode.enable = true;
             obsidian.enable = true;
