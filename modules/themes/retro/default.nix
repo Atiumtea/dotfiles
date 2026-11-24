@@ -4,7 +4,7 @@
     author = "Ron Dilley, adapted by Atiumtea (https://github.com/rondilley)";
     description = "Dark amber CRT palette with distinct semantic ANSI colors";
     polarity = "dark";
-    background = ./wallpaper.jpg;
+    background = ./dunes.jpg;
     backgroundHash = "";
 
     base00 = "0a0a08"; # Background
