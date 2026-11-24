@@ -364,25 +364,58 @@ prepare_rofi_log() {
 }
 
 open_window() {
-    local page="$1" notice="${2:-}" override
+    local page="$1" notice="${2:-}" override parent_pid
     override="$(theme_override "$page")"
+    parent_pid="$PPID"
 
-    # Replace the current Rofi process synchronously. Returning an empty result
-    # from Script Mode closes the old window, so a detached launcher is racy.
+    # Rofi waits for the Script Mode helper to finish before it can close.
+    # Detach the replacement, let this helper return an empty result, then
+    # start the next window only after the previous Rofi process has exited.
     prepare_rofi_log
-    printf '%s page=%s\n' "$(date --iso-8601=seconds)" "$page" >> "$ROFI_LOG"
-    exec env \
-        NIXOS_CONTROL_PAGE="$page" \
-        NIXOS_CONTROL_NOTICE="$notice" \
+    printf '%s page=%s parent_pid=%s\n' "$(date --iso-8601=seconds)" "$page" "$parent_pid" >> "$ROFI_LOG"
+
+    if ! setsid -f "$BASH" -c '
+        parent_pid="$1"
+        page="$2"
+        log_file="$3"
+        shift 3
+
+        if [[ "$parent_pid" =~ ^[1-9][0-9]*$ ]] && ((parent_pid > 1)); then
+            for ((attempt = 0; attempt < 100; attempt++)); do
+                kill -0 "$parent_pid" 2>/dev/null || break
+                sleep 0.05
+            done
+
+            if kill -0 "$parent_pid" 2>/dev/null; then
+                printf "%s rofi-parent-timeout page=%s pid=%s\\n" \
+                    "$(date --iso-8601=seconds)" "$page" "$parent_pid" >> "$log_file"
+            fi
+        fi
+
+        printf "%s rofi-start page=%s\\n" "$(date --iso-8601=seconds)" "$page" >> "$log_file"
+        "$@"
+        status=$?
+        printf "%s rofi-exit page=%s status=%s\\n" \
+            "$(date --iso-8601=seconds)" "$page" "$status" >> "$log_file"
+        exit "$status"
+    ' nixos-control-center-restart "$parent_pid" "$page" "$ROFI_LOG" \
+        env \
+        "NIXOS_CONTROL_PAGE=$page" \
+        "NIXOS_CONTROL_NOTICE=$notice" \
         rofi \
-            -replace \
-            -pid "$PID_FILE" \
-            -show nixos-control \
-            -modi "nixos-control:${SCRIPT_PATH}" \
-            -theme "$THEME_FILE" \
-            -theme-str "$override" \
-            -no-sort \
-            </dev/null >/dev/null 2>>"$ROFI_LOG"
+        -replace \
+        -pid "$PID_FILE" \
+        -show nixos-control \
+        -modi "nixos-control:${SCRIPT_PATH}" \
+        -theme "$THEME_FILE" \
+        -theme-str "$override" \
+        -no-sort \
+        </dev/null >>"$ROFI_LOG" 2>&1; then
+        printf '%s page=%s launcher-failed\n' "$(date --iso-8601=seconds)" "$page" >> "$ROFI_LOG"
+        exit 1
+    fi
+
+    exit 0
 }
 
 launch_kitty() {
