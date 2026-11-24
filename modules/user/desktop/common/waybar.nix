@@ -57,12 +57,23 @@
     nixosControl = pkgs.writeShellApplication {
         name = "waybar-nixos-control";
         runtimeInputs = [
+            pkgs.coreutils
+            pkgs.gawk
+            pkgs.git
+            pkgs.jq
             pkgs.kitty
-            osConfig.programs.nh.package
+            pkgs.nix
+            pkgs.procps
+            pkgs.power-profiles-daemon
             pkgs.rofi
+            pkgs.systemd
+            pkgs.yazi
+            osConfig.programs.nh.package
         ];
         text = ''
-            export NIXOS_CONTROL_ROFI_THEME="${config.xdg.configHome}/rofi/hyproled.rasi"
+            export PATH="${config.home.profileDirectory}/bin:$PATH"
+            export NIXOS_CONTROL_ROFI_THEME="${config.xdg.configHome}/rofi/nixos-control.rasi"
+            export NIXOS_CONTROL_DOTFILES="${config.home.homeDirectory}/dotfiles"
             export NH_FLAKE="${config.home.homeDirectory}/dotfiles"
             ${builtins.readFile ./waybar-nixos-control.sh}
         '';

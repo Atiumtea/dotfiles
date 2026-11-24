@@ -193,9 +193,15 @@ scripts/
 ## Custom scripts
 
 **`scripts/apply-boot.sh`** — safe rebuild wrapper around `nh os`.
-Subcommands: `check`, `build`, `diff`, `switch`, `boot`, `test`,
-`update`, `info`. Refuses to build on a dirty tree unless `--force`.
+Subcommands: `check`, `build`, `diff`, `dry-activate`, `switch`, `boot`,
+`test`, `update`, `info`. Refuses to build on a dirty tree unless `--force`.
 On failure it creates a diagnostic snapshot with a bounded log excerpt.
+
+**Waybar NixOS Control Center** — Rofi Script Mode pages for system
+overview, generation history (system commit and that generation's
+historical nixpkgs revision), power profiles, dotfiles/Yazi and actions.
+Build and activation actions run through `nixapply`; reboot, poweroff and
+available hibernation actions require an in-menu confirmation.
 
 **`nixsnap`** — captures live NixOS, hardware, generation, service,
 desktop and local Git state without exporting configuration contents.

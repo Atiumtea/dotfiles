@@ -10,6 +10,7 @@
 #   check     Run alejandra --check and `nix flake check`
 #   build     Build only; do not touch the current generation
 #   diff      Build and show diff vs the running system (no apply)
+#   dry-activate Build and preview activation without applying it
 #   switch    Apply the configuration immediately (default) and tag the new generation
 #   boot      Apply to the next boot only and tag the new generation
 #   test      Apply temporarily; reverts on reboot (no tag is created)
@@ -41,13 +42,13 @@ HOST="$(hostname -s 2>/dev/null || echo x1extreme)"
 
 # ─── Help ─────────────────────────────────────────────────────────────────────
 print_help() {
-  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 # ─── Argument parsing ─────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    check|build|diff|switch|boot|test|update|info)
+    check|build|diff|dry-activate|switch|boot|test|update|info)
       COMMAND="$1"; shift ;;
     --yes|-y)         ASSUME_YES=true; shift ;;
     --host)           HOST="${2:?--host requires an argument}"; shift 2 ;;
@@ -252,6 +253,7 @@ apply_via_nh() {
   local verb
   case "$action" in
     switch) verb="apply immediately" ;;
+    dry-activate) verb="preview activation without applying it" ;;
     boot)   verb="apply to next boot" ;;
     test)   verb="apply temporarily (reverts on reboot)" ;;
     build)  verb="build only" ;;
@@ -277,7 +279,7 @@ apply_via_nh() {
   fi
   echo
 
-  if [[ "$action" != "build" ]]; then
+  if [[ "$action" != "build" && "$action" != "dry-activate" ]]; then
     confirm "Proceed?" || { echo "Cancelled."; exit 0; }
   fi
 
@@ -378,6 +380,7 @@ case "$COMMAND" in
   check)  cmd_check ;;
   diff)   cmd_diff ;;
   info)   cmd_info ;;
+  dry-activate) apply_via_nh dry-activate ;;
   build)  apply_via_nh build ;;
   switch) apply_via_nh switch ;;
   boot)   apply_via_nh boot ;;

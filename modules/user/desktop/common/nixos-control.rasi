@@ -1,0 +1,149 @@
+/**
+ * Wide NixOS Control Center.
+ * Uses the generated Stylix palette; the compact Hyproled theme is independent.
+ */
+configuration {
+    show-icons: false;
+}
+
+@import "config.rasi"
+
+window {
+    transparency: "real";
+    location: center;
+    anchor: center;
+    fullscreen: false;
+    width: 1080px;
+    x-offset: 0px;
+    y-offset: 0px;
+
+    enabled: true;
+    margin: 0px;
+    padding: 0px;
+    border: 2px solid;
+    border-radius: 8px;
+    border-color: @normal-foreground;
+    background-color: black / 38%;
+}
+
+mainbox {
+    spacing: 10px;
+    margin: 0px;
+    padding: 18px;
+    background-color: transparent;
+    children: [ "inputbar", "message", "listview" ];
+}
+
+inputbar {
+    spacing: 12px;
+    margin: 0px;
+    padding: 10px 14px;
+    border: 1px solid;
+    border-radius: 5px;
+    border-color: @normal-foreground;
+    background-color: transparent;
+    text-color: @normal-text;
+    children: [ "prompt", "entry" ];
+}
+
+prompt {
+    expand: false;
+    background-color: transparent;
+    text-color: @active-foreground;
+}
+
+entry {
+    background-color: transparent;
+    text-color: @normal-text;
+    placeholder: "Search this page...";
+    placeholder-color: @alternate-normal-text;
+}
+
+message {
+    enabled: true;
+    expand: false;
+    width: 100%;
+    margin: 0px;
+    padding: 4px 8px 8px 8px;
+    border: 0px;
+    background-color: transparent;
+    text-color: @alternate-normal-text;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: inherit;
+    markup: true;
+    vertical-align: 0.5;
+}
+
+listview {
+    columns: 1;
+    lines: 27;
+    cycle: true;
+    dynamic: true;
+    scrollbar: true;
+    layout: vertical;
+    reverse: false;
+    fixed-height: false;
+    fixed-columns: true;
+
+    spacing: 2px;
+    margin: 0px;
+    padding: 0px;
+    background-color: transparent;
+    text-color: @foreground;
+}
+
+scrollbar {
+    enabled: true;
+    width: 4px;
+    handle-width: 4px;
+    border: 0px;
+    border-radius: 4px;
+    background-color: @lightbg;
+    handle-color: @active-foreground;
+}
+
+element {
+    spacing: 8px;
+    margin: 0px;
+    padding: 7px 12px;
+    border: 0px solid;
+    border-radius: 4px;
+    background-color: transparent;
+    text-color: @normal-text;
+    orientation: horizontal;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @normal-text;
+}
+
+element normal.active {
+    background-color: @active-background;
+    text-color: @active-foreground;
+}
+
+element selected.normal {
+    border: 1px solid;
+    border-color: @selected-normal-background;
+    background-color: @selected-normal-background;
+    text-color: @selected-normal-foreground;
+}
+
+element selected.active {
+    border: 1px solid;
+    border-color: @selected-active-background;
+    background-color: @selected-active-background;
+    text-color: @selected-active-foreground;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    highlight: inherit;
+    vertical-align: 0.5;
+    markup: true;
+}
