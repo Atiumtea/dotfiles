@@ -364,45 +364,40 @@ prepare_rofi_log() {
 }
 
 open_window() {
-    local page="$1" notice="${2:-}" override parent_pid
-    override="$(theme_override "$page")"
+    local page="$1" notice="${2:-}" parent_pid pid_from_file
     parent_pid="$PPID"
 
-    # Rofi waits for the Script Mode helper to finish before it can close.
-    # Detach the replacement, let this helper return an empty result, then
-    # start the next window only after the previous Rofi process has exited.
+    if [[ -r "$PID_FILE" ]]; then
+        pid_from_file="$(<"$PID_FILE")"
+        if [[ "$pid_from_file" =~ ^[1-9][0-9]*$ ]]; then
+            parent_pid="$pid_from_file"
+        fi
+    fi
+
+    # Let the Script Mode helper finish before starting the replacement Rofi.
+    # The detached instance waits for the current Rofi process to exit.
     prepare_rofi_log
     printf '%s page=%s parent_pid=%s\n' "$(date --iso-8601=seconds)" "$page" "$parent_pid" >> "$ROFI_LOG"
 
-    if ! setsid -f "$BASH" -c '
-        parent_pid="$1"
-        page="$2"
-        log_file="$3"
-        shift 3
-
-        if [[ "$parent_pid" =~ ^[1-9][0-9]*$ ]] && ((parent_pid > 1)); then
-            for ((attempt = 0; attempt < 100; attempt++)); do
-                kill -0 "$parent_pid" 2>/dev/null || break
-                sleep 0.05
-            done
-
-            if kill -0 "$parent_pid" 2>/dev/null; then
-                printf "%s rofi-parent-timeout page=%s pid=%s\\n" \
-                    "$(date --iso-8601=seconds)" "$page" "$parent_pid" >> "$log_file"
-            fi
-        fi
-
-        printf "%s rofi-start page=%s\\n" "$(date --iso-8601=seconds)" "$page" >> "$log_file"
-        "$@"
-        status=$?
-        printf "%s rofi-exit page=%s status=%s\\n" \
-            "$(date --iso-8601=seconds)" "$page" "$status" >> "$log_file"
-        exit "$status"
-    ' nixos-control-center-restart "$parent_pid" "$page" "$ROFI_LOG" \
-        env \
+    if ! setsid -f env \
+        "NIXOS_CONTROL_RESTART_PARENT_PID=$parent_pid" \
         "NIXOS_CONTROL_PAGE=$page" \
         "NIXOS_CONTROL_NOTICE=$notice" \
-        rofi \
+        "NIXOS_CONTROL_SCRIPT_PATH=$SCRIPT_PATH" \
+        "$SCRIPT_PATH" </dev/null >/dev/null 2>&1; then
+        printf '%s page=%s launcher-failed\n' "$(date --iso-8601=seconds)" "$page" >> "$ROFI_LOG"
+        exit 1
+    fi
+
+    exit 0
+}
+
+start_rofi_window() {
+    local override status
+    override="$(theme_override "$PAGE")"
+
+    printf '%s rofi-start page=%s\n' "$(date --iso-8601=seconds)" "$PAGE" >> "$ROFI_LOG"
+    if rofi \
         -replace \
         -pid "$PID_FILE" \
         -show nixos-control \
@@ -410,12 +405,13 @@ open_window() {
         -theme "$THEME_FILE" \
         -theme-str "$override" \
         -no-sort \
-        </dev/null >>"$ROFI_LOG" 2>&1; then
-        printf '%s page=%s launcher-failed\n' "$(date --iso-8601=seconds)" "$page" >> "$ROFI_LOG"
-        exit 1
+        </dev/null >/dev/null 2>>"$ROFI_LOG"; then
+        status=0
+    else
+        status=$?
     fi
-
-    exit 0
+    printf '%s rofi-exit page=%s status=%s\n' "$(date --iso-8601=seconds)" "$PAGE" "$status" >> "$ROFI_LOG"
+    return "$status"
 }
 
 launch_kitty() {
@@ -708,6 +704,29 @@ handle_selection() {
             ;;
     esac
 }
+
+if [[ -n "${NIXOS_CONTROL_RESTART_PARENT_PID:-}" ]]; then
+    parent_pid="$NIXOS_CONTROL_RESTART_PARENT_PID"
+    prepare_rofi_log
+
+    if [[ "$parent_pid" =~ ^[1-9][0-9]*$ ]] && ((parent_pid > 1)); then
+        for ((attempt = 0; attempt < 100; attempt++)); do
+            kill -0 "$parent_pid" 2>/dev/null || break
+            sleep 0.05
+        done
+        if kill -0 "$parent_pid" 2>/dev/null; then
+            printf '%s rofi-parent-timeout page=%s pid=%s\n' \
+                "$(date --iso-8601=seconds)" "$PAGE" "$parent_pid" >> "$ROFI_LOG"
+        fi
+    else
+        printf '%s rofi-invalid-parent-pid page=%s value=%s\n' \
+            "$(date --iso-8601=seconds)" "$PAGE" "$parent_pid" >> "$ROFI_LOG"
+    fi
+
+    unset NIXOS_CONTROL_RESTART_PARENT_PID ROFI_RETV ROFI_INFO ROFI_DATA ROFI_INPUT
+    start_rofi_window || exit "$?"
+    exit 0
+fi
 
 if [[ -z "${ROFI_RETV+x}" ]]; then
     export NIXOS_CONTROL_PAGE=menu
