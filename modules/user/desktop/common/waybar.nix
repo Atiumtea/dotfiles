@@ -63,9 +63,11 @@
             pkgs.jq
             pkgs.kitty
             pkgs.nix
+            pkgs.pciutils
             pkgs.procps
             pkgs.power-profiles-daemon
             pkgs.rofi
+            pkgs.util-linux
             pkgs.systemd
             pkgs.yazi
             osConfig.programs.nh.package
