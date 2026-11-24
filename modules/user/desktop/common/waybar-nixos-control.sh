@@ -251,7 +251,7 @@ render_overview() {
 }
 
 render_generations() {
-    local generations number date time current commit short nixpkgs state line
+    local generations number date current commit short nixpkgs state line
     generations="$(nix-env --list-generations --profile "$SYSTEM_PROFILE" 2>/dev/null || true)"
 
     emit_section "SYSTEM GENERATIONS"
@@ -263,7 +263,7 @@ render_generations() {
         return
     fi
 
-    while IFS=$'\t' read -r number date time current; do
+    while IFS=$'\t' read -r number date current; do
         [[ "$number" =~ ^[0-9]+$ ]] || continue
         commit="$(resolve_generation_commit "$number" 2>/dev/null || true)"
         short="$(get_short_commit "$commit" 2>/dev/null || printf '-')"
@@ -278,7 +278,7 @@ render_generations() {
             emit_static "$line"
         fi
     done < <(
-        awk '$1 ~ /^[0-9]+$/ { print $1 "\t" $2 "\t" $3 "\t" ($0 ~ /\(current\)/ ? "1" : "0") }' <<< "$generations" \
+        awk '$1 ~ /^[0-9]+$/ { print $1 "\t" $2 "\t" ($0 ~ /\(current\)/ ? "1" : "0") }' <<< "$generations" \
             | sort -rn -k1,1
     )
 }

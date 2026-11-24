@@ -16,8 +16,6 @@
         nixosConfigurations = builtins.listToAttrs (map (host: {
                 name = host;
                 value = lib.nixosSystem {
-                    inherit system;
-
                     modules = [
                         {
                             nixpkgs = {

@@ -296,11 +296,7 @@ apply_via_nh() {
 
   if [[ $status -ne 0 ]]; then
     echo
-    echo "ERROR: 'nh os ${action}' failed (exit ${status}). Log: ${LOG_FILE}" >&2
-    echo "Nix build log: ${BUILD_LOG_FILE}" >&2
-    echo "Last nh diagnostics:" >&2
-    tail -n 25 "$LOG_FILE" >&2 || true
-    echo "Please review the log. If this was a pre-switch inhibitor, use 'boot' instead of 'switch'." >&2
+    echo "Build failed." >&2
     return "$status"
   fi
 
