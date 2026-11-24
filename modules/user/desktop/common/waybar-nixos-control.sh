@@ -15,6 +15,11 @@ else
     PID_FILE="${HOME}/.cache/nixos-control-center-rofi.pid"
 fi
 
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/nixos-control-center"
+ROFI_LOG="${STATE_DIR}/rofi.log"
+HARDWARE_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nixos-control-center"
+HARDWARE_CACHE_FILE="${HARDWARE_CACHE_DIR}/hardware.tsv"
+
 escape_markup() {
     local value="${1:-}"
     value="${value//&/\&amp;}"
@@ -40,14 +45,9 @@ emit_info() {
 }
 
 emit_button() {
-    local text="$1" info="$2" meta="${3:-}" urgent="${4:-false}"
-    if [[ "$urgent" == true ]]; then
-        printf '%s\0info\x1f%s\x1fmeta\x1f%s\x1factive\x1ftrue\x1furgent\x1ftrue\n' \
-            "$text" "$info" "$meta"
-    else
-        printf '%s\0info\x1f%s\x1fmeta\x1f%s\x1factive\x1ftrue\n' \
-            "$text" "$info" "$meta"
-    fi
+    local text="$1" info="$2" meta="${3:-}"
+    printf '%s\0info\x1f%s\x1fmeta\x1f%s\x1factive\x1ftrue\n' \
+        "$text" "$info" "$meta"
 }
 
 get_generation() {
@@ -179,26 +179,24 @@ get_cpu_summary() {
 }
 
 get_gpu_summary() {
-    local gpu
-    gpu="$(lspci -nn 2>/dev/null | awk -F ': ' '
+    lspci -nn 2>/dev/null | awk -F ': ' '
         /VGA compatible controller|3D controller|Display controller/ {
             name = $2
-            sub(/ \[[[:xdigit:]]{4}:[[:xdigit:]]{4}\]$/, "", name)
+            sub(/ \[[[:xdigit:]]{4}:[[:xdigit:]]{4}\].*$/, "", name)
+            sub(/ \(rev [^)]+\)$/, "", name)
             gsub(/[[:space:]]+$/, "", name)
-            if (result != "") result = result " · "
-            result = result name
+            print name
         }
-        END { print result }
-    ')"
-    printf '%s' "${gpu:-Unavailable}"
+    '
 }
 
 get_memory_summary() {
-    awk '
+    awk -v total_kib="${1:-}" '
         /^MemTotal:/ { total = $2 }
         /^MemAvailable:/ { available = $2 }
         END {
-            if (total > 0) {
+            if (total_kib ~ /^[0-9]+$/) total = total_kib
+            if (total > 0 && available > 0) {
                 printf "%.1f GiB installed · %.1f GiB available", total / 1048576, available / 1048576
             } else {
                 print "Unavailable"
@@ -222,6 +220,72 @@ get_display_summary() {
         ' 2>/dev/null || true)"
     fi
     printf '%s' "${display:-Unavailable}"
+}
+
+get_memory_total_kib() {
+    awk '/^MemTotal:/ { print $2; exit }' /proc/meminfo
+}
+
+read_hardware_cache_field() {
+    local key="$1"
+    awk -F '\t' -v key="$key" '
+        $1 == key {
+            sub(/^[^\t]*\t/, "")
+            print
+            exit
+        }
+    ' "$HARDWARE_CACHE_FILE"
+}
+
+load_hardware_cache() {
+    local boot_id cached_boot temp gpu
+    local -a current_gpus=()
+
+    HARDWARE_DEVICE=""
+    HARDWARE_CPU=""
+    HARDWARE_MEMORY_TOTAL_KIB=""
+    HARDWARE_GPUS=()
+
+    boot_id="$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || true)"
+    if [[ -z "$boot_id" ]]; then
+        HARDWARE_DEVICE="$(get_device_model)"
+        HARDWARE_CPU="$(get_cpu_summary)"
+        HARDWARE_MEMORY_TOTAL_KIB="$(get_memory_total_kib)"
+        while IFS= read -r gpu; do
+            [[ -n "$gpu" ]] && current_gpus+=("$gpu")
+        done < <(get_gpu_summary)
+        HARDWARE_GPUS=("${current_gpus[@]}")
+        return 0
+    fi
+
+    mkdir -p -- "$HARDWARE_CACHE_DIR"
+    chmod 700 -- "$HARDWARE_CACHE_DIR"
+    cached_boot=""
+    if [[ -r "$HARDWARE_CACHE_FILE" ]]; then
+        cached_boot="$(read_hardware_cache_field boot_id)"
+    fi
+
+    if [[ "$cached_boot" != "$boot_id" ]]; then
+        temp="$(mktemp "${HARDWARE_CACHE_FILE}.XXXXXX")"
+        {
+            printf 'boot_id\t%s\n' "$boot_id"
+            printf 'device\t%s\n' "$(get_device_model)"
+            printf 'cpu\t%s\n' "$(get_cpu_summary)"
+            printf 'memory_total_kib\t%s\n' "$(get_memory_total_kib)"
+            while IFS= read -r gpu; do
+                [[ -n "$gpu" ]] && printf 'gpu\t%s\n' "$gpu"
+            done < <(get_gpu_summary)
+        } > "$temp"
+        chmod 600 -- "$temp"
+        mv -f -- "$temp" "$HARDWARE_CACHE_FILE"
+    fi
+
+    HARDWARE_DEVICE="$(read_hardware_cache_field device)"
+    HARDWARE_CPU="$(read_hardware_cache_field cpu)"
+    HARDWARE_MEMORY_TOTAL_KIB="$(read_hardware_cache_field memory_total_kib)"
+    mapfile -t HARDWARE_GPUS < <(
+        awk -F '\t' '$1 == "gpu" { sub(/^[^\t]*\t/, ""); print }' "$HARDWARE_CACHE_FILE"
+    )
 }
 
 theme_override() {
@@ -285,13 +349,29 @@ RASI
     esac
 }
 
+prepare_rofi_log() {
+    local size
+    mkdir -p -- "$STATE_DIR"
+    chmod 700 -- "$STATE_DIR"
+    touch -- "$ROFI_LOG"
+    chmod 600 -- "$ROFI_LOG"
+    size="$(stat -c %s "$ROFI_LOG" 2>/dev/null || printf '0')"
+    if [[ "$size" =~ ^[0-9]+$ ]] && ((size > 524288)); then
+        tail -c 262144 "$ROFI_LOG" > "${ROFI_LOG}.tmp"
+        chmod 600 -- "${ROFI_LOG}.tmp"
+        mv -f -- "${ROFI_LOG}.tmp" "$ROFI_LOG"
+    fi
+}
+
 open_window() {
     local page="$1" notice="${2:-}" override
     override="$(theme_override "$page")"
 
-    # All Control Center windows share one PID file. Rofi replaces the previous
-    # window in place; setsid keeps the replacement alive while the old one exits.
-    setsid -f env \
+    # Replace the current Rofi process synchronously. Returning an empty result
+    # from Script Mode closes the old window, so a detached launcher is racy.
+    prepare_rofi_log
+    printf '%s page=%s\n' "$(date --iso-8601=seconds)" "$page" >> "$ROFI_LOG"
+    exec env \
         NIXOS_CONTROL_PAGE="$page" \
         NIXOS_CONTROL_NOTICE="$notice" \
         rofi \
@@ -302,8 +382,7 @@ open_window() {
             -theme "$THEME_FILE" \
             -theme-str "$override" \
             -no-sort \
-            </dev/null >/dev/null 2>&1
-    exit 0
+            </dev/null >/dev/null 2>>"$ROFI_LOG"
 }
 
 launch_kitty() {
@@ -368,13 +447,13 @@ render_menu() {
 }
 
 render_overview() {
-    local device cpu gpu memory storage display os_version kernel architecture uptime
+    local device cpu memory storage display os_version kernel architecture uptime gpu_index gpu_label
     local generation commit nixpkgs
 
-    device="$(get_device_model)"
-    cpu="$(get_cpu_summary)"
-    gpu="$(get_gpu_summary)"
-    memory="$(get_memory_summary)"
+    load_hardware_cache
+    device="$HARDWARE_DEVICE"
+    cpu="$HARDWARE_CPU"
+    memory="$(get_memory_summary "$HARDWARE_MEMORY_TOTAL_KIB")"
     storage="$(get_storage_summary)"
     display="$(get_display_summary)"
     os_version="$(nixos-version 2>/dev/null || printf 'NixOS')"
@@ -388,7 +467,17 @@ render_overview() {
     emit_heading "HARDWARE"
     emit_info "Device" "$device"
     emit_info "Processor" "$cpu"
-    emit_info "Graphics" "$gpu"
+    if ((${#HARDWARE_GPUS[@]} == 0)); then
+        emit_info "Graphics" "Unavailable"
+    else
+        for ((gpu_index = 0; gpu_index < ${#HARDWARE_GPUS[@]}; gpu_index++)); do
+            gpu_label="Graphics"
+            if ((${#HARDWARE_GPUS[@]} > 1)); then
+                gpu_label="Graphics $((gpu_index + 1))"
+            fi
+            emit_info "$gpu_label" "${HARDWARE_GPUS[$gpu_index]}"
+        done
+    fi
     emit_info "Memory" "$memory"
     emit_info "Storage" "$storage"
     emit_info "Display" "$display"
@@ -399,7 +488,7 @@ render_overview() {
     emit_info "Uptime" "$uptime"
     emit_heading "ACTIVE GENERATION"
     emit_info "Generation" "${generation:--}"
-    emit_info "System commit" "$(get_short_commit "$commit" 2>/dev/null || printf '-')"
+    emit_info "System commit" "${commit:--}"
     emit_info "nixpkgs rev" "${nixpkgs:--}"
     emit_button "← Control Center" "open:menu" "back main menu"
 }
@@ -494,12 +583,10 @@ render_actions() {
     emit_button "Apply on next boot" "run:boot" "boot generation"
     emit_button "Test until reboot" "run:test" "temporary activation"
     emit_heading "SYSTEM POWER"
-    emit_button "Reboot" "confirm:reboot" "restart system" true
-    emit_button "Power off" "confirm:poweroff" "shutdown system" true
+    emit_button "Reboot" "confirm:reboot" "restart system"
+    emit_button "Power off" "confirm:poweroff" "shutdown system"
     if can_hibernate; then
         emit_button "Hibernate" "confirm:hibernate" "suspend to disk"
-    else
-        emit_static "  Hibernate is unavailable on this system."
     fi
     emit_button "← Control Center" "open:menu" "back main menu"
 }
@@ -525,7 +612,7 @@ render_confirmation() {
     esac
 
     emit_static "$label"
-    emit_button "Yes, continue" "execute:${action}" "confirm ${action}" true
+    emit_button "Yes, continue" "execute:${action}" "confirm ${action}"
     emit_button "Cancel" "open:actions" "cancel back"
 }
 
@@ -591,6 +678,8 @@ handle_selection() {
 
 if [[ -z "${ROFI_RETV+x}" ]]; then
     export NIXOS_CONTROL_PAGE=menu
+    prepare_rofi_log
+    printf '%s page=menu\n' "$(date --iso-8601=seconds)" >> "$ROFI_LOG"
     exec rofi \
         -replace \
         -pid "$PID_FILE" \
@@ -598,7 +687,8 @@ if [[ -z "${ROFI_RETV+x}" ]]; then
         -modi "nixos-control:${SCRIPT_PATH}" \
         -theme "$THEME_FILE" \
         -theme-str "$(theme_override menu)" \
-        -no-sort
+        -no-sort \
+        </dev/null >/dev/null 2>>"$ROFI_LOG"
 fi
 
 if [[ "${ROFI_RETV:-0}" == "1" ]]; then

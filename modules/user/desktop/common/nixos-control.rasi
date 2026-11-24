@@ -129,28 +129,21 @@ element normal.active {
     text-color: @normal-text;
 }
 
+/* Keep odd/even selectable rows visually identical. */
+element alternate.active {
+    border: 1px solid;
+    border-radius: 4px;
+    border-color: @separatorcolor;
+    background-color: @lightbg;
+    text-color: @normal-text;
+}
+
 element selected.active {
     border: 1px solid;
     border-radius: 4px;
     border-color: @selected-active-background;
     background-color: @selected-active-background;
     text-color: @selected-active-foreground;
-}
-
-element normal.urgent {
-    border: 1px solid;
-    border-radius: 4px;
-    border-color: @urgent-foreground;
-    background-color: @lightbg;
-    text-color: @urgent-foreground;
-}
-
-element selected.urgent {
-    border: 1px solid;
-    border-radius: 4px;
-    border-color: @selected-urgent-background;
-    background-color: @selected-urgent-background;
-    text-color: @selected-urgent-foreground;
 }
 
 element selected.normal {
