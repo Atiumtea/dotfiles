@@ -1,6 +1,6 @@
 /**
  * NixOS Control Center.
- * Compact launcher with page-specific sizing supplied by Rofi Script Mode.
+ * Persistent Script Mode window with shared width and content-driven height.
  * Uses the generated Stylix palette; the compact Hyproled theme is independent.
  */
 configuration {
@@ -14,7 +14,7 @@ window {
     location: center;
     anchor: center;
     fullscreen: false;
-    width: 390px;
+    width: 980px;
     x-offset: 0px;
     y-offset: 0px;
 
@@ -32,7 +32,7 @@ mainbox {
     margin: 0px;
     padding: 10px;
     background-color: transparent;
-    children: [ "inputbar", "listview" ];
+    children: [ "inputbar", "message", "listview" ];
 }
 
 inputbar {
@@ -82,7 +82,7 @@ textbox {
 
 listview {
     columns: 1;
-    lines: 5;
+    lines: 24;
     cycle: true;
     dynamic: true;
     scrollbar: false;

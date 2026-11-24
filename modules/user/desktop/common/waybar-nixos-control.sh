@@ -5,7 +5,7 @@ DOTFILES="${NIXOS_CONTROL_DOTFILES:-${HOME}/dotfiles}"
 SYSTEM_PROFILE="${NIXOS_CONTROL_SYSTEM_PROFILE:-/nix/var/nix/profiles/system}"
 THEME_FILE="${NIXOS_CONTROL_ROFI_THEME:-${XDG_CONFIG_HOME:-$HOME/.config}/rofi/nixos-control.rasi}"
 SCRIPT_PATH="${NIXOS_CONTROL_SCRIPT_PATH:-$0}"
-PAGE="${NIXOS_CONTROL_PAGE:-menu}"
+PAGE="${ROFI_DATA:-${NIXOS_CONTROL_PAGE:-menu}}"
 NOTICE="${NIXOS_CONTROL_NOTICE:-}"
 
 if [[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" ]]; then
@@ -288,67 +288,6 @@ load_hardware_cache() {
     )
 }
 
-theme_override() {
-    case "$1" in
-        menu)
-            cat <<'RASI'
-window { width: 390px; }
-listview { lines: 5; }
-mainbox { children: [ "inputbar", "listview" ]; }
-RASI
-            ;;
-        overview)
-            cat <<'RASI'
-window { width: 980px; }
-listview { lines: 20; }
-mainbox { children: [ "inputbar", "message", "listview" ]; }
-RASI
-            ;;
-        generations)
-            cat <<'RASI'
-window { width: 1240px; }
-listview { lines: 24; }
-mainbox { children: [ "inputbar", "message", "listview" ]; }
-RASI
-            ;;
-        power)
-            cat <<'RASI'
-window { width: 650px; }
-listview { lines: 12; }
-mainbox { children: [ "inputbar", "message", "listview" ]; }
-RASI
-            ;;
-        dotfiles)
-            cat <<'RASI'
-window { width: 780px; }
-listview { lines: 11; }
-mainbox { children: [ "inputbar", "message", "listview" ]; }
-RASI
-            ;;
-        actions)
-            cat <<'RASI'
-window { width: 620px; }
-listview { lines: 13; }
-mainbox { children: [ "inputbar", "message", "listview" ]; }
-RASI
-            ;;
-        confirm-*)
-            cat <<'RASI'
-window { width: 470px; }
-listview { lines: 4; }
-mainbox { children: [ "inputbar", "message", "listview" ]; }
-RASI
-            ;;
-        *)
-            cat <<'RASI'
-window { width: 390px; }
-listview { lines: 5; }
-mainbox { children: [ "inputbar", "listview" ]; }
-RASI
-            ;;
-    esac
-}
-
 prepare_rofi_log() {
     local size
     mkdir -p -- "$STATE_DIR"
@@ -364,54 +303,8 @@ prepare_rofi_log() {
 }
 
 open_window() {
-    local page="$1" notice="${2:-}" parent_pid pid_from_file
-    parent_pid="$PPID"
-
-    if [[ -r "$PID_FILE" ]]; then
-        pid_from_file="$(<"$PID_FILE")"
-        if [[ "$pid_from_file" =~ ^[1-9][0-9]*$ ]]; then
-            parent_pid="$pid_from_file"
-        fi
-    fi
-
-    # Let the Script Mode helper finish before starting the replacement Rofi.
-    # The detached instance waits for the current Rofi process to exit.
-    prepare_rofi_log
-    printf '%s page=%s parent_pid=%s\n' "$(date --iso-8601=seconds)" "$page" "$parent_pid" >> "$ROFI_LOG"
-
-    if ! setsid -f env \
-        "NIXOS_CONTROL_RESTART_PARENT_PID=$parent_pid" \
-        "NIXOS_CONTROL_PAGE=$page" \
-        "NIXOS_CONTROL_NOTICE=$notice" \
-        "NIXOS_CONTROL_SCRIPT_PATH=$SCRIPT_PATH" \
-        "$SCRIPT_PATH" </dev/null >/dev/null 2>&1; then
-        printf '%s page=%s launcher-failed\n' "$(date --iso-8601=seconds)" "$page" >> "$ROFI_LOG"
-        exit 1
-    fi
-
-    exit 0
-}
-
-start_rofi_window() {
-    local override status
-    override="$(theme_override "$PAGE")"
-
-    printf '%s rofi-start page=%s\n' "$(date --iso-8601=seconds)" "$PAGE" >> "$ROFI_LOG"
-    if rofi \
-        -replace \
-        -pid "$PID_FILE" \
-        -show nixos-control \
-        -modi "nixos-control:${SCRIPT_PATH}" \
-        -theme "$THEME_FILE" \
-        -theme-str "$override" \
-        -no-sort \
-        </dev/null >/dev/null 2>>"$ROFI_LOG"; then
-        status=0
-    else
-        status=$?
-    fi
-    printf '%s rofi-exit page=%s status=%s\n' "$(date --iso-8601=seconds)" "$PAGE" "$status" >> "$ROFI_LOG"
-    return "$status"
+    PAGE="$1"
+    NOTICE="${2:-}"
 }
 
 launch_kitty() {
@@ -420,6 +313,7 @@ launch_kitty() {
 
     if ! command -v kitty >/dev/null 2>&1; then
         open_window actions "Kitty is not available; the action was not started."
+        return 0
     fi
 
     kitty --title "$title" "$@" </dev/null >/dev/null 2>&1 &
@@ -431,6 +325,7 @@ launch_nixapply() {
     local action="$1"
     if ! command -v nixapply >/dev/null 2>&1; then
         open_window actions "nixapply is not available; the action was not started."
+        return 0
     fi
     launch_kitty "NixOS Control · ${action}" --hold nixapply "$action"
 }
@@ -438,6 +333,7 @@ launch_nixapply() {
 launch_yazi() {
     if ! command -v yazi >/dev/null 2>&1; then
         open_window dotfiles "Yazi is not available."
+        return 0
     fi
     launch_kitty "Dotfiles · Yazi" --class yazi -- yazi "$DOTFILES"
 }
@@ -447,6 +343,7 @@ run_system_power_action() {
 
     if [[ "$action" == "hibernate" ]] && ! can_hibernate; then
         open_window actions "Hibernate is no longer available; no action was taken."
+        return 0
     fi
 
     case "$action" in
@@ -523,34 +420,64 @@ render_overview() {
 }
 
 render_generations() {
-    local generations number date current commit short nixpkgs state line
-    generations="$(nix-env --list-generations --profile "$SYSTEM_PROFILE" 2>/dev/null || true)"
+    local link base number timestamp generation_date active_generation
+    local commit short nixpkgs state line
+    local -a generation_numbers=()
+
+    active_generation="$(get_generation)"
+
+    # Read system profile generation links directly. Listing this root-owned
+    # profile through nix-env would require elevated privileges.
+    for link in "${SYSTEM_PROFILE}"-[0-9]*-link; do
+        [[ -L "$link" ]] || continue
+        base="${link##*/}"
+
+        if [[ "$base" =~ ^system-([0-9]+)-link$ ]]; then
+            generation_numbers+=("${BASH_REMATCH[1]}")
+        fi
+    done
+
+    if ((${#generation_numbers[@]} > 0)); then
+        mapfile -t generation_numbers < <(
+            printf '%s\n' "${generation_numbers[@]}" | sort -rn -u
+        )
+    fi
 
     emit_heading "SYSTEM GENERATIONS"
-    printf -v line '%-5s %-10s %-8s %-40s %-8s' "GEN" "DATE" "COMMIT" "NIXPKGS REV" "STATE"
+    printf -v line '%-5s %-10s %-8s %-12s %-8s' \
+        "GEN" "DATE" "COMMIT" "NIXPKGS" "STATE"
     emit_static "<b>${line}</b>"
 
-    if [[ -z "$generations" ]]; then
-        emit_static "  Generation information is unavailable."
+    if ((${#generation_numbers[@]} == 0)); then
+        emit_static "  No system generation links found."
     else
-        while IFS=$'\t' read -r number date current; do
-            [[ "$number" =~ ^[0-9]+$ ]] || continue
+        for number in "${generation_numbers[@]}"; do
+            link="${SYSTEM_PROFILE}-${number}-link"
+            timestamp="$(stat -c '%Y' -- "$link" 2>/dev/null || true)"
+            generation_date="-"
+
+            if [[ "$timestamp" =~ ^[0-9]+$ ]]; then
+                generation_date="$(date -d "@${timestamp}" +%F 2>/dev/null || printf '-')"
+            fi
+
             commit="$(resolve_generation_commit "$number" 2>/dev/null || true)"
             short="$(get_short_commit "$commit" 2>/dev/null || printf '-')"
             nixpkgs="$(get_nixpkgs_revision "$commit" 2>/dev/null || printf '-')"
+            nixpkgs="${nixpkgs:0:12}"
+
             state=""
-            [[ "$current" == "1" ]] && state="CURRENT"
-            printf -v line '%-5s %-10s %-8s %-40s %-8s' "$number" "$date" "$short" "$nixpkgs" "$state"
+            [[ "$number" == "$active_generation" ]] && state="CURRENT"
+
+            printf -v line '%-5s %-10s %-8s %-12s %-8s' \
+                "$number" "$generation_date" "$short" "$nixpkgs" "$state"
             line="$(escape_markup "$line")"
-            if [[ "$current" == "1" ]]; then
+
+            if [[ "$number" == "$active_generation" ]]; then
                 emit_static "<b>${line}</b>"
             else
                 emit_static "$line"
             fi
-        done < <(
-            awk '$1 ~ /^[0-9]+$/ { print $1 "\t" $2 "\t" ($0 ~ /\(current\)/ ? "1" : "0") }' <<< "$generations" \
-                | sort -rn -k1,1
-        )
+        done
     fi
 
     emit_button "← Control Center" "open:menu" "back main menu"
@@ -647,6 +574,18 @@ render_confirmation() {
 
 render_page() {
     local prompt
+
+    case "$PAGE" in
+        menu|overview|generations|power|dotfiles|actions|confirm-reboot|confirm-poweroff|confirm-hibernate)
+            ;;
+        *)
+            PAGE="menu"
+            ;;
+    esac
+
+    # Store the current page for the next Rofi Script Mode invocation.
+    printf '\0data\x1f%s\n' "$PAGE"
+
     case "$PAGE" in
         menu) render_menu; return ;;
         overview) prompt="System information" ;;
@@ -655,12 +594,12 @@ render_page() {
         dotfiles) prompt="Dotfiles" ;;
         actions) prompt="System actions" ;;
         confirm-reboot|confirm-poweroff|confirm-hibernate) prompt="Confirm action" ;;
-        *) open_window menu ;;
     esac
 
     printf '\0prompt\x1f%s\n' "$prompt"
     printf '\0markup-rows\x1ftrue\n'
     printf '\0no-custom\x1ftrue\n'
+
     if [[ -n "$NOTICE" ]]; then
         printf '\0message\x1f%s\n' "$(escape_markup "$NOTICE")"
     fi
@@ -705,29 +644,6 @@ handle_selection() {
     esac
 }
 
-if [[ -n "${NIXOS_CONTROL_RESTART_PARENT_PID:-}" ]]; then
-    parent_pid="$NIXOS_CONTROL_RESTART_PARENT_PID"
-    prepare_rofi_log
-
-    if [[ "$parent_pid" =~ ^[1-9][0-9]*$ ]] && ((parent_pid > 1)); then
-        for ((attempt = 0; attempt < 100; attempt++)); do
-            kill -0 "$parent_pid" 2>/dev/null || break
-            sleep 0.05
-        done
-        if kill -0 "$parent_pid" 2>/dev/null; then
-            printf '%s rofi-parent-timeout page=%s pid=%s\n' \
-                "$(date --iso-8601=seconds)" "$PAGE" "$parent_pid" >> "$ROFI_LOG"
-        fi
-    else
-        printf '%s rofi-invalid-parent-pid page=%s value=%s\n' \
-            "$(date --iso-8601=seconds)" "$PAGE" "$parent_pid" >> "$ROFI_LOG"
-    fi
-
-    unset NIXOS_CONTROL_RESTART_PARENT_PID ROFI_RETV ROFI_INFO ROFI_DATA ROFI_INPUT
-    start_rofi_window || exit "$?"
-    exit 0
-fi
-
 if [[ -z "${ROFI_RETV+x}" ]]; then
     export NIXOS_CONTROL_PAGE=menu
     prepare_rofi_log
@@ -738,7 +654,6 @@ if [[ -z "${ROFI_RETV+x}" ]]; then
         -show nixos-control \
         -modi "nixos-control:${SCRIPT_PATH}" \
         -theme "$THEME_FILE" \
-        -theme-str "$(theme_override menu)" \
         -no-sort \
         </dev/null >/dev/null 2>>"$ROFI_LOG"
 fi
