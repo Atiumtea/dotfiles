@@ -29,6 +29,8 @@ umask 077
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 DOTFILES="${HOME}/dotfiles"
+SYSTEM_PROFILE="/nix/var/nix/profiles/system"
+GENERATION_HELPER="${DOTFILES}/scripts/control-center-generations.py"
 SNAPSHOT_DIR="${HOME}/snapshots"
 TIMESTAMP="$(date +%Y-%m-%d_%H-%M-%S-%N)"
 
@@ -193,7 +195,7 @@ run_nh() {
 # Get the current generation number from the profile link
 get_generation() {
   local link
-  link="$(readlink /nix/var/nix/profiles/system 2>/dev/null || true)"
+  link="$(readlink "$SYSTEM_PROFILE" 2>/dev/null || true)"
   if [[ "$link" =~ system-([0-9]+)-link ]]; then
     echo "${BASH_REMATCH[1]}"
   else
@@ -266,6 +268,14 @@ apply_via_nh() {
     echo
   fi
 
+  # Snapshot the current inventory before a switch/boot can remove old links.
+  # The hourly user timer and Control Center also refresh this inventory.
+  if [[ "$action" == "switch" || "$action" == "boot" ]]; then
+    if ! run_logged python3 "$GENERATION_HELPER" sync --profile "$SYSTEM_PROFILE"; then
+      echo "WARNING: Could not refresh Control Center generation inventory." >&2
+    fi
+  fi
+
   local old_gen
   old_gen=$(get_generation)
 
@@ -334,6 +344,21 @@ apply_via_nh() {
         else
           echo "WARNING: Failed to create tag '$tag_name'." >&2
         fi
+      fi
+    fi
+
+    # Capture detailed metadata once, after a new persistent generation exists.
+    # A metadata failure must never roll back or fail a successful system switch.
+    if [[ -n "$new_gen" && "$new_gen" != "$old_gen" ]]; then
+      if ! run_logged python3 "$GENERATION_HELPER" capture \
+          --profile "$SYSTEM_PROFILE" \
+          --generation "$new_gen" \
+          --action "$action" \
+          --host "$HOST" \
+          --user "$(id -un)" \
+          --dotfiles "$DOTFILES" \
+          --build-log "$BUILD_LOG_FILE"; then
+        echo "WARNING: The system generation was applied, but Control Center metadata capture was incomplete." >&2
       fi
     fi
   elif [[ "$action" == "test" ]]; then
