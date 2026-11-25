@@ -5,7 +5,19 @@ DOTFILES="${NIXOS_CONTROL_DOTFILES:-${HOME}/dotfiles}"
 SYSTEM_PROFILE="${NIXOS_CONTROL_SYSTEM_PROFILE:-/nix/var/nix/profiles/system}"
 THEME_FILE="${NIXOS_CONTROL_ROFI_THEME:-${XDG_CONFIG_HOME:-$HOME/.config}/rofi/nixos-control.rasi}"
 SCRIPT_PATH="${NIXOS_CONTROL_SCRIPT_PATH:-$0}"
-PAGE="${ROFI_DATA:-${NIXOS_CONTROL_PAGE:-menu}}"
+PAGE_STATE="${ROFI_DATA:-${NIXOS_CONTROL_PAGE:-menu}}"
+PAGE="$PAGE_STATE"
+GENERATION_VIEW="current"
+case "$PAGE_STATE" in
+    generations:removed)
+        PAGE="generations"
+        GENERATION_VIEW="removed"
+        ;;
+    generations:current)
+        PAGE="generations"
+        GENERATION_VIEW="current"
+        ;;
+esac
 NOTICE="${NIXOS_CONTROL_NOTICE:-}"
 
 if [[ -n "${XDG_RUNTIME_DIR:-}" && -d "$XDG_RUNTIME_DIR" ]]; then
@@ -17,6 +29,7 @@ fi
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/nixos-control-center"
 ROFI_LOG="${STATE_DIR}/rofi.log"
+GENERATION_HELPER="${NIXOS_CONTROL_GENERATION_HELPER:-${DOTFILES}/scripts/control-center-generations.py}"
 HARDWARE_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/nixos-control-center"
 HARDWARE_CACHE_FILE="${HARDWARE_CACHE_DIR}/hardware.tsv"
 
@@ -31,6 +44,10 @@ escape_markup() {
 
 emit_static() {
     printf '%s\0nonselectable\x1ftrue\n' "$1"
+}
+
+emit_archived() {
+    printf '%s\0nonselectable\x1ftrue\x1furgent\x1ftrue\n' "$1"
 }
 
 emit_heading() {
@@ -205,6 +222,31 @@ get_memory_summary() {
     ' /proc/meminfo
 }
 
+get_uptime_summary() {
+    local uptime_seconds days hours minutes
+    local -a parts=()
+
+    if ! read -r uptime_seconds _ < /proc/uptime; then
+        printf 'Unavailable'
+        return 0
+    fi
+
+    uptime_seconds="${uptime_seconds%%.*}"
+    if [[ ! "$uptime_seconds" =~ ^[0-9]+$ ]]; then
+        printf 'Unavailable'
+        return 0
+    fi
+
+    days=$((uptime_seconds / 86400))
+    hours=$(((uptime_seconds % 86400) / 3600))
+    minutes=$(((uptime_seconds % 3600) / 60))
+
+    ((days > 0)) && parts+=("${days}d")
+    ((hours > 0)) && parts+=("${hours}h")
+    ((minutes > 0 || ${#parts[@]} == 0)) && parts+=("${minutes}m")
+    printf '%s' "${parts[*]}"
+}
+
 get_storage_summary() {
     local storage
     storage="$(df -hP / 2>/dev/null | awk 'NR == 2 { printf "%s free / %s total (%s used)", $4, $2, $5 }')"
@@ -305,6 +347,9 @@ prepare_rofi_log() {
 open_window() {
     PAGE="$1"
     NOTICE="${2:-}"
+    if [[ "$PAGE" != "generations" ]]; then
+        GENERATION_VIEW="current"
+    fi
 }
 
 launch_kitty() {
@@ -385,7 +430,7 @@ render_overview() {
     os_version="$(nixos-version 2>/dev/null || printf 'NixOS')"
     kernel="$(uname -r 2>/dev/null || printf 'Unavailable')"
     architecture="$(uname -m 2>/dev/null || printf 'Unavailable')"
-    uptime="$(uptime -p 2>/dev/null || printf 'Unavailable')"
+    uptime="$(get_uptime_summary)"
     generation="$(get_generation)"
     commit="$(resolve_generation_commit "$generation" 2>/dev/null || true)"
     nixpkgs="$(get_nixpkgs_revision "$commit" 2>/dev/null || true)"
@@ -420,66 +465,72 @@ render_overview() {
 }
 
 render_generations() {
-    local link base number timestamp generation_date active_generation
-    local commit short nixpkgs state line
-    local -a generation_numbers=()
+    local records present_count removed_count jq_filter
+    local number generation_date action system_state source_state commit nixpkgs
+    local closure paths nixos_packages hm_packages delta nixos_version kernel_version package_diff line
 
-    active_generation="$(get_generation)"
-
-    # Read system profile generation links directly. Listing this root-owned
-    # profile through nix-env would require elevated privileges.
-    for link in "${SYSTEM_PROFILE}"-[0-9]*-link; do
-        [[ -L "$link" ]] || continue
-        base="${link##*/}"
-
-        if [[ "$base" =~ ^system-([0-9]+)-link$ ]]; then
-            generation_numbers+=("${BASH_REMATCH[1]}")
-        fi
-    done
-
-    if ((${#generation_numbers[@]} > 0)); then
-        mapfile -t generation_numbers < <(
-            printf '%s\n' "${generation_numbers[@]}" | sort -rn -u
-        )
+    if ! records="$(python3 "$GENERATION_HELPER" list --profile "$SYSTEM_PROFILE" 2>>"$ROFI_LOG")"; then
+        records='[]'
+        emit_static "  Generation history could not be loaded; see the Control Center log."
     fi
 
-    emit_heading "SYSTEM GENERATIONS"
-    printf -v line '%-5s %-10s %-8s %-12s %-8s' \
-        "GEN" "DATE" "COMMIT" "NIXPKGS" "STATE"
-    emit_static "<b>${line}</b>"
+    present_count="$(jq '[.[] | select(.present == true)] | length' <<< "$records" 2>/dev/null || printf '0')"
+    removed_count="$(jq '[.[] | select(.present == false)] | length' <<< "$records" 2>/dev/null || printf '0')"
 
-    if ((${#generation_numbers[@]} == 0)); then
-        emit_static "  No system generation links found."
+    if [[ "$GENERATION_VIEW" == "removed" ]]; then
+        emit_heading "REMOVED SYSTEM GENERATIONS"
+        jq_filter='.[] | select(.present == false) | [(.generation // "-") | tostring, (.displayDate // "-"), (.systemState // "-"), (.action // "-"), (.commitShort // "-"), (.nixpkgsShort // "-"), (.closureSizeLabel // "-"), (.closurePathsLabel // "-"), (.nixosPackagesLabel // "-"), (.homePackagesLabel // "-"), (.deltaLabel // "Δ -"), (.nixosVersion // "-"), (.kernelVersion // "-"), (.packageDiffLabel // "Package diff unavailable"), (.sourceState // "-")] | @tsv'
     else
-        for number in "${generation_numbers[@]}"; do
-            link="${SYSTEM_PROFILE}-${number}-link"
-            timestamp="$(stat -c '%Y' -- "$link" 2>/dev/null || true)"
-            generation_date="-"
+        emit_heading "SYSTEM GENERATIONS"
+        jq_filter='.[] | select(.present == true) | [(.generation // "-") | tostring, (.displayDate // "-"), (.systemState // "-"), (.action // "-"), (.commitShort // "-"), (.nixpkgsShort // "-"), (.closureSizeLabel // "-"), (.closurePathsLabel // "-"), (.nixosPackagesLabel // "-"), (.homePackagesLabel // "-"), (.deltaLabel // "Δ -"), (.nixosVersion // "-"), (.kernelVersion // "-"), (.packageDiffLabel // "Package diff unavailable"), (.sourceState // "-")] | @tsv'
+    fi
 
-            if [[ "$timestamp" =~ ^[0-9]+$ ]]; then
-                generation_date="$(date -d "@${timestamp}" +%F 2>/dev/null || printf '-')"
-            fi
+    while IFS=$'\t' read -r number generation_date system_state action commit nixpkgs closure paths nixos_packages hm_packages delta nixos_version kernel_version package_diff source_state; do
+        [[ -n "$number" ]] || continue
 
-            commit="$(resolve_generation_commit "$number" 2>/dev/null || true)"
-            short="$(get_short_commit "$commit" 2>/dev/null || printf '-')"
-            nixpkgs="$(get_nixpkgs_revision "$commit" 2>/dev/null || printf '-')"
-            nixpkgs="${nixpkgs:0:12}"
+        printf -v line '#%-4s %-9s %-10s %-7s %-8s %-5s nixpkgs %s' \
+            "$number" "$system_state" "$generation_date" "$action" "$commit" "$source_state" "$nixpkgs"
+        line="$(escape_markup "$line")"
+        if [[ "$GENERATION_VIEW" == "removed" ]]; then
+            emit_archived "<b>${line}</b>"
+        else
+            emit_static "<b>${line}</b>"
+        fi
 
-            state=""
-            [[ "$number" == "$active_generation" ]] && state="CURRENT"
+        printf -v line '    NAR closure %s · %s paths · NixOS %s pkgs / HM %s pkgs' \
+            "$closure" "$paths" "$nixos_packages" "$hm_packages"
+        line="$(escape_markup "$line")"
+        if [[ "$GENERATION_VIEW" == "removed" ]]; then
+            emit_archived "$line"
+        else
+            emit_static "$line"
+        fi
 
-            printf -v line '%-5s %-10s %-8s %-12s %-8s' \
-                "$number" "$generation_date" "$short" "$nixpkgs" "$state"
-            line="$(escape_markup "$line")"
+        printf -v line '    NixOS %s · Kernel %s · %s' "$nixos_version" "$kernel_version" "$delta"
+        line="$(escape_markup "$line")"
+        if [[ "$GENERATION_VIEW" == "removed" ]]; then
+            emit_archived "$line"
+        else
+            emit_static "$line"
+        fi
 
-            if [[ "$number" == "$active_generation" ]]; then
-                emit_static "<b>${line}</b>"
+        if [[ "$package_diff" != "Package diff unavailable" && "$package_diff" != "No package-name changes" ]]; then
+            line="$(escape_markup "    ${package_diff}")"
+            if [[ "$GENERATION_VIEW" == "removed" ]]; then
+                emit_archived "$line"
             else
                 emit_static "$line"
             fi
-        done
-    fi
+        fi
+    done < <(jq -r "$jq_filter" <<< "$records")
 
+    if [[ "$GENERATION_VIEW" == "removed" ]]; then
+        [[ "$removed_count" -gt 0 ]] || emit_static "  No removed generations have been archived."
+        emit_button "Show available generations (${present_count})" "generations:current" "show live system profiles"
+    else
+        [[ "$present_count" -gt 0 ]] || emit_static "  No live system generation links found."
+        emit_button "Show removed generations (${removed_count})" "generations:removed" "show archived generations"
+    fi
     emit_button "← Control Center" "open:menu" "back main menu"
 }
 
@@ -573,7 +624,7 @@ render_confirmation() {
 }
 
 render_page() {
-    local prompt
+    local prompt page_state
 
     case "$PAGE" in
         menu|overview|generations|power|dotfiles|actions|confirm-reboot|confirm-poweroff|confirm-hibernate)
@@ -583,8 +634,10 @@ render_page() {
             ;;
     esac
 
-    # Store the current page for the next Rofi Script Mode invocation.
-    printf '\0data\x1f%s\n' "$PAGE"
+    # Store the current page and generation subview for the next Rofi invocation.
+    page_state="$PAGE"
+    [[ "$PAGE" == "generations" ]] && page_state="generations:${GENERATION_VIEW}"
+    printf '\0data\x1f%s\n' "$page_state"
 
     case "$PAGE" in
         menu) render_menu; return ;;
@@ -620,6 +673,16 @@ handle_selection() {
     case "$selection" in
         open:menu|open:overview|open:generations|open:power|open:dotfiles|open:actions)
             open_window "${selection#open:}"
+            ;;
+        generations:removed)
+            PAGE="generations"
+            GENERATION_VIEW="removed"
+            NOTICE=""
+            ;;
+        generations:current)
+            PAGE="generations"
+            GENERATION_VIEW="current"
+            NOTICE=""
             ;;
         power:set:*)
             profile="${selection#power:set:}"

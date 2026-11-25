@@ -65,6 +65,7 @@
             pkgs.nix
             pkgs.pciutils
             pkgs.procps
+            pkgs.python3
             pkgs.power-profiles-daemon
             pkgs.rofi
             pkgs.util-linux

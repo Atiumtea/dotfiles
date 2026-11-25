@@ -138,6 +138,14 @@ element alternate.active {
     text-color: @normal-text;
 }
 
+element normal.urgent {
+    text-color: @urgent-foreground;
+}
+
+element alternate.urgent {
+    text-color: @urgent-foreground;
+}
+
 element selected.active {
     border: 1px solid;
     border-radius: 4px;
