@@ -375,12 +375,12 @@ launch_nixapply() {
     launch_kitty "NixOS Control · ${action}" --hold nixapply "$action"
 }
 
-launch_yazi() {
-    if ! command -v yazi >/dev/null 2>&1; then
-        open_window dotfiles "Yazi is not available."
+launch_broot() {
+    if ! command -v broot >/dev/null 2>&1; then
+        open_window dotfiles "Broot is not available."
         return 0
     fi
-    launch_kitty "Dotfiles · Yazi" --class yazi -- yazi "$DOTFILES"
+    launch_kitty "Dotfiles · Broot" --class broot -- broot -gh "$DOTFILES"
 }
 
 run_system_power_action() {
@@ -413,7 +413,7 @@ render_menu() {
     emit_button "Overview" "open:overview" "system hardware processor graphics memory"
     emit_button "Generations" "open:generations" "history commit nixpkgs revision"
     emit_button "Power" "open:power" "battery energy profiles"
-    emit_button "Dotfiles" "open:dotfiles" "repository git yazi files"
+    emit_button "Dotfiles" "open:dotfiles" "repository git broot tree status files"
     emit_button "Actions" "open:actions" "build activate switch boot reboot shutdown hibernate"
 }
 
@@ -578,7 +578,7 @@ render_dotfiles() {
     emit_info "Branch" "$branch"
     emit_info "HEAD" "$head"
     emit_info "Working tree" "$state"
-    emit_button "Open dotfiles in Yazi" "browse:dotfiles" "browse repository files"
+    emit_button "Open dotfiles in Broot" "browse:dotfiles" "browse repository with Git status"
     emit_button "← Control Center" "open:menu" "back main menu"
 }
 
@@ -693,7 +693,7 @@ handle_selection() {
             fi
             ;;
         browse:dotfiles)
-            launch_yazi
+            launch_broot
             ;;
         run:build|run:dry-activate|run:switch|run:boot|run:test)
             launch_nixapply "${selection#run:}"

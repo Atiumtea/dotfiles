@@ -70,7 +70,7 @@
             pkgs.rofi
             pkgs.util-linux
             pkgs.systemd
-            pkgs.yazi
+            pkgs.broot
             osConfig.programs.nh.package
         ];
         text = ''

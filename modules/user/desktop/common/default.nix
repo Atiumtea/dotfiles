@@ -9,6 +9,7 @@
         ./waybar.nix
         ./wattage.nix
         ./yazi.nix
+        ./broot.nix
     ];
 
     config = lib.mkIf osConfig.hostSettings.desktop.enable {
