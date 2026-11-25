@@ -181,7 +181,7 @@ in {
                 hl.bind(mainMod .. " + M", hl.dsp.exit())
                 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
                 hl.bind(mainMod .. " + F", hl.dsp.window.float({ action = "toggle" }))
-                hl.bind(mainMod .. " + R", hl.dsp.exec_cmd(menu))
+                hl.bind(mainMod .. " + D", hl.dsp.exec_cmd(menu))
 
                 -- Switch workspaces with mainMod + [0-9].
                 -- Move active windows silently with mainMod + SHIFT + [0-9].

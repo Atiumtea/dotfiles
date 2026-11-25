@@ -7,6 +7,7 @@
         ./common
         ./hyprland
         ./niri
+        ./quickshell
     ];
 
     config = lib.mkIf osConfig.hostSettings.desktop.enable {

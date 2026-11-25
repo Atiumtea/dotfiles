@@ -13,6 +13,7 @@
             security.enable = true;
             git.enable = true;
             misc.enable = true;
+            quickshell.enable = true;
 
             hyproled.autoShift = {
                 enable = true;
@@ -79,10 +80,9 @@
             };
         };
 
-        # Create a writable directory for game files.
-        # Game binaries and saves remain outside the Nix store.
-        home.activation.ensureIsaacDirectory = lib.hm.dag.entryAfter ["writeBoundary"] ''
-            $DRY_RUN_CMD mkdir -p "$HOME/Games/Isaac"
+        # Create a writable directories for game files.
+        home.activation.ensureGameDirectories = lib.hm.dag.entryAfter ["writeBoundary"] ''
+            $DRY_RUN_CMD mkdir -p "$HOME/Games/Isaac" "$HOME/Games/WorldBox"
         '';
 
         home.stateVersion = "25.05";

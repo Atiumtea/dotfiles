@@ -101,12 +101,14 @@
                 "org.freedesktop.Platform.VulkanLayer.MangoHud//25.08"
             ];
 
-            # Allow Bottles to access the Isaac game directory,
-            # without granting access to the entire home directory.
-            overrides.settings."com.usebottles.bottles".Context.filesystems = [
-                "/home/atiumtea/Games/Isaac:rw"
-            ];
-        };
+            # Restrict Bottles to the game directories and disable network access.
+            overrides.settings."com.usebottles.bottles".Context = {
+               filesystems = [
+                   "/home/atiumtea/Games/Isaac:rw"
+                    "/home/atiumtea/Games/WorldBox:rw"
+                ];
+                shared = ["!network"];
+            };
 
         system.stateVersion = "26.05";
     };

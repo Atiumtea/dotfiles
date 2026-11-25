@@ -18,6 +18,7 @@
 
     config = lib.mkIf config.userSettings.misc.enable {
         home.packages = with pkgs; [
+            qbittorrent
             discord
             #  pi
             python3
