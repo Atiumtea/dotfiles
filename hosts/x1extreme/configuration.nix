@@ -74,8 +74,6 @@
 
         networking.networkmanager.enable = true;
         networking.firewall.enable = lib.mkForce true;
-        networking.firewall.allowedTCPPorts = [8341];
-        networking.firewall.allowedUDPPorts = [8341];
 
         # Disable inbound Steam ports (not needed for normal gameplay)
         programs.steam.remotePlay.openFirewall = lib.mkForce false;

@@ -122,7 +122,7 @@
             mkdir -p "$out/share/qBittorrent/themes"
             mkdir -p "$out/share/licenses/catthode-qbittorrent"
 
-            rcc --binary -no-compress ${resources} \
+            ${pkgs.qt6.qtbase}/libexec/rcc --binary -no-compress ${resources} \
                 -o "$out/share/qBittorrent/themes/stylix.qbtheme"
 
             cp ${inputs.catthode}/LICENSE \
