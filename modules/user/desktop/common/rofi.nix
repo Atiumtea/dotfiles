@@ -64,6 +64,89 @@ in {
             };
         };
 
+        # Hide settings and terminal-only applications from GUI application launcher.
+        xdg.desktopEntries = {
+            "qt5ct" = {
+                name = "Qt5 Settings";
+                noDisplay = true;
+            };
+
+            "qt6ct" = {
+                name = "Qt6 Settings";
+                noDisplay = true;
+            };
+
+            "nvidia-settings" = {
+                name = "NVIDIA X Server Settings";
+                noDisplay = true;
+            };
+
+            "blueman-adapters" = {
+                name = "Bluetooth Adapters";
+                noDisplay = true;
+            };
+
+            "xdg-desktop-portal-gtk" = {
+                name = "Portal";
+                noDisplay = true;
+            };
+
+            "org.freedesktop.Xwayland" = {
+                name = "Xwayland";
+                noDisplay = true;
+            };
+
+            "org.quickshell" = {
+                name = "Quickshell";
+                noDisplay = true;
+            };
+
+            "rofi" = {
+                name = "Rofi";
+                noDisplay = true;
+            };
+
+            "rofi-theme-selector" = {
+                name = "Rofi Theme Selector";
+                noDisplay = true;
+            };
+
+            "code-url-handler" = {
+                name = "Visual Studio Code - URL Handler";
+                noDisplay = true;
+            };
+
+            "kitty-open" = {
+                name = "kitty URL Launcher";
+                noDisplay = true;
+            };
+
+            "umpv" = {
+                name = "umpv Media Player";
+                noDisplay = true;
+            };
+
+            "btop" = {
+                name = "btop++";
+                noDisplay = true;
+            };
+
+            "nvim" = {
+                name = "Neovim wrapper";
+                noDisplay = true;
+            };
+
+            "rmpc" = {
+                name = "rmpc";
+                noDisplay = true;
+            };
+
+            "yazi" = {
+                name = "Yazi File Manager";
+                noDisplay = true;
+            };
+        };
+
         xdg.configFile = {
             "rofi/launcher.rasi".source = ./launcher.rasi;
             "rofi/hyproled.rasi".source = ./hyproled.rasi;
