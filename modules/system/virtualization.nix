@@ -15,6 +15,24 @@
     };
 
     config = lib.mkMerge [
+        # Restore the virtualization services independently of Looking Glass.
+        (lib.mkIf config.hostSettings.virtualization.libvirt.enable {
+            virtualisation.libvirtd = {
+                enable = true;
+                qemu = {
+                    package = pkgs.qemu_kvm;
+                    vhostUserPackages = [pkgs.virtiofsd];
+                };
+            };
+
+            virtualisation.spiceUSBRedirection.enable = true;
+            programs.virt-manager.enable = true;
+        })
+
+        (lib.mkIf config.hostSettings.virtualization.docker.enable {
+            virtualisation.docker.enable = true;
+        })
+
         (lib.mkIf (
                 config.hostSettings.virtualization.libvirt.enable
                 && config.hostSettings.virtualization.lookingGlass.enable
