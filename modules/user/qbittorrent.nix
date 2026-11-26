@@ -108,7 +108,7 @@
 
     resources = pkgs.writeText "catthode-stylix.qrc" ''
         <RCC>
-            <qresource prefix="/uitheme">
+            <qresource>
                 <file alias="stylesheet.qss">${stylesheet}</file>
                 <file alias="config.json">${configJson}</file>
             </qresource>
