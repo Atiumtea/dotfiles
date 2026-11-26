@@ -18,6 +18,8 @@
             grimblast
             satty
             linux-wallpaperengine
+            virt-viewer
+            looking-glass-client
         ];
 
         programs.yazi = {

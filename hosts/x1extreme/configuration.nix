@@ -24,6 +24,7 @@
                         "uinput"
                         "docker"
                         "libvirtd"
+                        "kvm"
                         "gamemode"
                     ];
                 }
@@ -40,6 +41,7 @@
             sddm.enable = true;
             virtualization.docker.enable = true;
             virtualization.libvirt.enable = true;
+            virtualization.lookingGlass.enable = true;
             gaming.enable = true;
 
             styling = {
