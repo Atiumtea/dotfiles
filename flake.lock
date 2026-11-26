@@ -85,6 +85,23 @@
         "type": "github"
       }
     },
+    "catthode": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1789574751,
+        "narHash": "sha256-fgFmBtFlO5A9xvU6Oyq5pj7T+MWKSL4wj3ZlldR13mQ=",
+        "owner": "catthode",
+        "repo": "qbittorrent",
+        "rev": "394a9186ccdbbf0464d24b432524487375dceef5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "catthode",
+        "repo": "qbittorrent",
+        "rev": "394a9186ccdbbf0464d24b432524487375dceef5",
+        "type": "github"
+      }
+    },
     "firefox-gnome-theme": {
       "flake": false,
       "locked": {
@@ -535,6 +552,7 @@
     "root": {
       "inputs": {
         "arkenfox-userjs": "arkenfox-userjs",
+        "catthode": "catthode",
         "home-manager": "home-manager",
         "hyproled": "hyproled",
         "niri": "niri",
