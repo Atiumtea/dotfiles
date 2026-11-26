@@ -14,6 +14,7 @@
     imports = [
         ./music.nix
         ./obsidian.nix
+        ./qbittorrent.nix
     ];
 
     config = lib.mkIf config.userSettings.misc.enable {
