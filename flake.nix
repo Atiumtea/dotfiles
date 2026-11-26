@@ -109,6 +109,13 @@
             url = "github:arkenfox/user.js/144.0";
             flake = false;
         };
+
+        # Pinned Catthode qBittorrent theme sources.
+        catthode = {
+            url = "github:catthode/qbittorrent/394a9186ccdbbf0464d24b432524487375dceef5";
+            flake = false;
+        };
+
         hyproled = {
             url = "github:Atiumtea/hyproled?ref=main";
             inputs.nixpkgs.follows = "nixpkgs";

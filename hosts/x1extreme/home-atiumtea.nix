@@ -13,6 +13,7 @@
             security.enable = true;
             git.enable = true;
             misc.enable = true;
+            qbittorrent.enable = true;
             quickshell.enable = true;
 
             hyproled.autoShift = {

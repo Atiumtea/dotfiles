@@ -4,6 +4,7 @@
         ./git.nix
         ./security.nix
         ./xdg.nix
+        ./qbittorrent.nix
 
         ./browsers
         ./desktop
