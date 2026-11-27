@@ -41,6 +41,7 @@ hostSettings = {
   desktop.hyprland.enable         = true;
   virtualization.docker.enable    = true;
   virtualization.libvirt.enable   = true;
+  virtualization.gpuPassthrough.enable = true;
   styling = { enable = true; theme = "blood-moon"; };
 };
 ```
@@ -156,7 +157,7 @@ scripts/
 | `users.nix`              | user accounts + groups from per-user `extraGroups`               |
 | `audio.nix`              | PipeWire + WirePlumber + JACK + rtkit + `playerctld`, pavucontrol |
 | `gaming.nix`             | Steam, Gamemode, `proton-ge-bin`                               |
-| `virtualization.nix`     | libvirt/QEMU/KVM (+virtiofsd, SPICE USB redirection), Docker   |
+| `virtualization.nix`     | libvirt/QEMU/KVM, Docker, Looking Glass/KVMFR, dynamic VFIO GPU passthrough |
 | `security/`              | `sudo-rs`, restricted to `wheel`                               |
 | `desktop/hyprland.nix`   | `programs.hyprland`                                            |
 | `desktop/niri.nix`       | `programs.niri`                                                |

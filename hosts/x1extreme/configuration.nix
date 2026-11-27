@@ -42,6 +42,7 @@
             virtualization.docker.enable = true;
             virtualization.libvirt.enable = true;
             virtualization.lookingGlass.enable = true;
+            virtualization.gpuPassthrough.enable = true;
             gaming.enable = true;
 
             styling = {

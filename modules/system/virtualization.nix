@@ -10,6 +10,7 @@
                 libvirt.enable = lib.mkEnableOption "libvirt support";
                 docker.enable = lib.mkEnableOption "Docker support";
                 lookingGlass.enable = lib.mkEnableOption "Looking Glass support";
+                gpuPassthrough.enable = lib.mkEnableOption "dynamic GPU passthrough";
             };
         };
     };
@@ -35,13 +36,29 @@
 
         (lib.mkIf (
                 config.hostSettings.virtualization.libvirt.enable
+                && (
+                    config.hostSettings.virtualization.lookingGlass.enable
+                    || config.hostSettings.virtualization.gpuPassthrough.enable
+                )
+            ) {
+                # Intel VT-d / IOMMU for Looking Glass and PCI passthrough.
+                boot.kernelParams = ["intel_iommu=on"];
+            })
+
+        (lib.mkIf (
+                config.hostSettings.virtualization.libvirt.enable
+                && config.hostSettings.virtualization.gpuPassthrough.enable
+            ) {
+                # Load VFIO support without binding any PCI device at boot.
+                boot.kernelModules = ["vfio-pci"];
+            })
+
+        (lib.mkIf (
+                config.hostSettings.virtualization.libvirt.enable
                 && config.hostSettings.virtualization.lookingGlass.enable
             ) {
-                # Intel VT-d / IOMMU
-                boot.kernelParams = [
-                    "intel_iommu=on"
-                    "kvmfr.static_size_mb=128"
-                ];
+                # Looking Glass shared-memory backing.
+                boot.kernelParams = ["kvmfr.static_size_mb=128"];
 
                 # Looking Glass KVMFR module, built for the active kernel.
                 boot.extraModulePackages = [
