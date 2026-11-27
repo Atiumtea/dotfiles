@@ -58,7 +58,7 @@
                 && config.hostSettings.virtualization.lookingGlass.enable
             ) {
                 # Looking Glass shared-memory backing.
-                boot.kernelParams = ["kvmfr.static_size_mb=128"];
+                boot.kernelParams = ["kvmfr.static_size_mb=32"];
 
                 # Looking Glass KVMFR module, built for the active kernel.
                 boot.extraModulePackages = [
