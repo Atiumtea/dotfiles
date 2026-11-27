@@ -48,7 +48,7 @@
  
  // Global state for the control device
  nv_linux_state_t nv_ctl_device = { { 0 } };
-@@ -1212,35 +1222,88 @@
+@@ -1212,36 +1222,88 @@
   * with missing UUID information are ignored. If found, nvl is returned with
   * nvl->ldata_lock taken.
   */
@@ -127,7 +127,7 @@
 +    return nvl;
 +}
 +
-+/*
+ /*
   * Search the global list of nv devices. The search logic is:
   *
   * 1) If any device has the given UUID, return it
