@@ -290,6 +290,25 @@
         "type": "github"
       }
     },
+    "looking-glass": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793932757,
+        "narHash": "sha256-L3al9KjpzNy0BWqn0d6tu4KGD6P6ZrypX8IcJZvifw4=",
+        "ref": "refs/heads/master",
+        "rev": "1b485305d9267207701d01adbe7907e90bfd6990",
+        "revCount": 4314,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/gnif/LookingGlass.git"
+      },
+      "original": {
+        "rev": "1b485305d9267207701d01adbe7907e90bfd6990",
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/gnif/LookingGlass.git"
+      }
+    },
     "niri": {
       "inputs": {
         "niri-stable": "niri-stable",
@@ -555,6 +574,7 @@
         "catthode": "catthode",
         "home-manager": "home-manager",
         "hyproled": "hyproled",
+        "looking-glass": "looking-glass",
         "niri": "niri",
         "nix-firefox-addons": "nix-firefox-addons",
         "nix-flatpak": "nix-flatpak",
