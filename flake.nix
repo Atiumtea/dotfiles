@@ -124,6 +124,10 @@
             url = "github:v81d/wattage";
             inputs.nixpkgs.follows = "nixpkgs";
         };
+        looking-glass = {
+            url = "git+https://github.com/gnif/LookingGlass.git?rev=1b485305d9267207701d01adbe7907e90bfd6990&submodules=1";
+            flake = false;
+        };
         retrogrub = {
             url = "github:Atiumtea/retrogrub";
             flake = false;

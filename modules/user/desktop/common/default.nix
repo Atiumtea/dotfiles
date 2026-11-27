@@ -2,8 +2,13 @@
     osConfig,
     lib,
     pkgs,
+    inputs,
     ...
-}: {
+}: let
+    lookingGlassClient = pkgs.callPackage ./looking-glass-client.nix {
+        src = inputs.looking-glass;
+    };
+in {
     imports = [
         ./rofi.nix
         ./waybar.nix
@@ -19,7 +24,7 @@
             satty
             linux-wallpaperengine
             virt-viewer
-            looking-glass-client
+            lookingGlassClient
         ];
 
         programs.yazi = {
