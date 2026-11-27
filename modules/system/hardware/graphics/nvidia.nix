@@ -3,7 +3,24 @@
     lib,
     pkgs,
     ...
-}: {
+}: let
+    nvidiaPackage = config.boot.kernelPackages.nvidiaPackages.production;
+
+    # Apply the UVM reference-release fix to the open kernel module only.
+    nvidiaPackageWithUnbindFix = nvidiaPackage.overrideAttrs (old: {
+        passthru =
+            old.passthru
+            // {
+                open = old.passthru.open.overrideAttrs (openOld: {
+                    patches =
+                        (openOld.patches or [])
+                        ++ [
+                            ./patches/nvidia-open-gpu-unbind.patch
+                        ];
+                });
+            };
+    });
+in {
     options = {
         hostSettings = {
             hardware.graphics.nvidia.enable = lib.mkEnableOption "nVidia GPU support";
@@ -20,12 +37,7 @@
                 open = true;
                 modesetting.enable = true;
                 powerManagement.enable = true;
-                # Patch NVIDIA's UVM reference leak during dynamic PCI detach.
-                package = config.boot.kernelPackages.nvidiaPackages.production.override {
-                    patchesOpen = [
-                        ./patches/nvidia-open-gpu-unbind.patch
-                    ];
-                };
+                package = nvidiaPackageWithUnbindFix;
             };
 
             nvidia-container-toolkit = lib.mkIf config.hostSettings.virtualization.docker.enable {
