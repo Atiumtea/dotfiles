@@ -31,65 +31,67 @@
     pulseaudio,
     libsamplerate,
     usbredir,
-}:
-stdenv.mkDerivation {
-    pname = "looking-glass-client";
+}: let
     version = "B8-rc1";
+in
+    stdenv.mkDerivation {
+        pname = "looking-glass-client";
+        inherit version;
 
-    inherit src;
+        inherit src;
 
-    nativeBuildInputs = [
-        cmake
-        pkg-config
-        wayland-scanner
-        gawk
-        binutils
-    ];
+        nativeBuildInputs = [
+            cmake
+            pkg-config
+            wayland-scanner
+            gawk
+            binutils
+        ];
 
-    buildInputs = [
-        fontconfig
-        freefont_ttf
-        fuse3
-        gmp
-        spice-protocol
-        nettle
-        libunwind
-        elfutils
-        libGL
+        buildInputs = [
+            fontconfig
+            freefont_ttf
+            fuse3
+            gmp
+            spice-protocol
+            nettle
+            libunwind
+            elfutils
+            libGL
 
-        libx11
-        libxfixes
-        libxi
-        libxscrnsaver
-        libxinerama
-        libxcursor
-        libxpresent
-        libxrandr
-        libxkbcommon
+            libx11
+            libxfixes
+            libxi
+            libxscrnsaver
+            libxinerama
+            libxcursor
+            libxpresent
+            libxrandr
+            libxkbcommon
 
-        wayland
-        wayland-protocols
+            wayland
+            wayland-protocols
 
-        pipewire
-        pulseaudio
-        libsamplerate
-        usbredir
-    ];
+            pipewire
+            pulseaudio
+            libsamplerate
+            usbredir
+        ];
 
-    postUnpack = ''
-        echo "${version}" > source/VERSION
-        export sourceRoot="source/client"
-    '';
+        postUnpack = ''
+            echo "${version}" > source/VERSION
+            export sourceRoot="source/client"
+        '';
 
-    cmakeFlags = [
-        "-DOPTIMIZE_FOR_NATIVE=OFF"
-    ];
+        cmakeFlags = [
+            "-DOPTIMIZE_FOR_NATIVE=OFF"
+        ];
 
-    meta = {
-        description = "Looking Glass B8 Linux client";
-        homepage = "https://looking-glass.io/";
-        license = lib.licenses.gpl2Plus;
-        mainProgram = "looking-glass-client";
-        platforms = ["x86_64-linux"];
-    };
-}
+        meta = {
+            description = "Looking Glass B8 Linux client";
+            homepage = "https://looking-glass.io/";
+            license = lib.licenses.gpl2Plus;
+            mainProgram = "looking-glass-client";
+            platforms = ["x86_64-linux"];
+        };
+    }
