@@ -48,30 +48,7 @@
  
  // Global state for the control device
  nv_linux_state_t nv_ctl_device = { { 0 } };
-@@ -1212,36 +1222,88 @@
-  * with missing UUID information are ignored. If found, nvl is returned with
-  * nvl->ldata_lock taken.
-  */
- nv_linux_state_t *find_uuid(const NvU8 *uuid)
- {
-     nv_linux_state_t *nvl = NULL;
-     nv_state_t *nv;
-     const NvU8 *dev_uuid;
- 
-     LOCK_NV_LINUX_DEVICES();
- 
-     for (nvl = nv_linux_devices; nvl; nvl = nvl->next)
-     {
-         nv = NV_STATE_PTR(nvl);
-         down(&nvl->ldata_lock);
-         dev_uuid = nv_get_cached_uuid(nv);
-         if (dev_uuid && memcmp(dev_uuid, uuid, GPU_UUID_LEN) == 0)
-             goto out;
-         up(&nvl->ldata_lock);
-     }
- 
- out:
-     UNLOCK_NV_LINUX_DEVICES();
+@@ -1235,5 +1245,57 @@
      return nvl;
  }
  
@@ -129,14 +106,6 @@
 +
  /*
   * Search the global list of nv devices. The search logic is:
-  *
-  * 1) If any device has the given UUID, return it
-  *
-  * 2) If no device has the given UUID but at least one device is missing
-  *    its UUID (for example because rm_init_adapter has not run on it yet),
-  *    return that device.
-  *
-  * 3) If no device has the given UUID and all UUIDs are present, return NULL.
 @@ -5384,24 +5446,24 @@
   * kernel modules. This decrements the ref count of the device with
   * the given gpu_id, potentially tearing it down.
@@ -214,19 +183,7 @@
  
  NV_STATUS NV_API_CALL nv_get_device_memory_config(
      nv_state_t *nv,
-@@ -5695,18 +5757,42 @@
- }
- 
- /* caller should hold nv_linux_devices_lock using LOCK_NV_LINUX_DEVICES */
- void nv_linux_remove_device_locked(nv_linux_state_t *nvl)
- {
-     if (nvl == nv_linux_devices) {
-         nv_linux_devices = nvl->next;
-     }
-     else
-     {
-         nv_linux_state_t *tnvl;
-         for (tnvl = nv_linux_devices; tnvl->next != nvl;  tnvl = tnvl->next);
+@@ -5707,6 +5769,30 @@
          tnvl->next = nvl->next;
      }
  }
