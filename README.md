@@ -115,7 +115,7 @@ hosts/
   x1extreme/
     default.nix                  # wires hostSettings.users → home-manager
     configuration.nix            # hostSettings flags
-    hardware-configuration*.nix  # generated + manual kernel params
+    hardware-configuration*.nix  # generated hardware + host-specific VT-d/VFIO settings
     home-atiumtea.nix            # userSettings flags
 modules/
   system/                        # NixOS modules (hostSettings.*)
