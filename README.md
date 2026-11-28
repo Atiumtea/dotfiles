@@ -163,7 +163,7 @@ scripts/
 | `desktop/niri.nix`       | `programs.niri`                                                |
 | `hardware/bluetooth.nix` | BlueZ + blueman                                                |
 | `hardware/laptop.nix`    | NVIDIA Prime offload, finegrained power management, brightnessctl |
-| `hardware/graphics/`     | `hardware.graphics` + nvidia (open, modesetting, vaapi), amd, virtio |
+| `hardware/graphics/`     | `hardware.graphics` + nvidia (host-selectable open/proprietary kernel module, modesetting, vaapi), amd, virtio |
 | `kernel/`                | optional CachyOS kernel (`cachyosKernels.*`, scx_lavld), tty0tty |
 | `postgresql/`            | optional local Postgres with declarative users/dbs             |
 | `sddm/`                  | SDDM Astronaut, colors fed from Stylix                         |

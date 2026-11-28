@@ -3,27 +3,15 @@
     lib,
     pkgs,
     ...
-}: let
-    nvidiaPackage = config.boot.kernelPackages.nvidiaPackages.production;
-
-    # Apply the UVM reference-release fix to the open kernel module only.
-    nvidiaPackageWithUnbindFix = nvidiaPackage.overrideAttrs (old: {
-        passthru =
-            old.passthru
-            // {
-                open = old.passthru.open.overrideAttrs (openOld: {
-                    patches =
-                        (openOld.patches or [])
-                        ++ [
-                            ./patches/nvidia-open-gpu-unbind.patch
-                        ];
-                });
-            };
-    });
-in {
+}: {
     options = {
         hostSettings = {
             hardware.graphics.nvidia.enable = lib.mkEnableOption "nVidia GPU support";
+            hardware.graphics.nvidia.open = lib.mkOption {
+                type = lib.types.bool;
+                default = true;
+                description = "Use the open NVIDIA kernel module.";
+            };
         };
     };
 
@@ -34,10 +22,10 @@ in {
             ];
 
             nvidia = {
-                open = true;
+                open = config.hostSettings.hardware.graphics.nvidia.open;
                 modesetting.enable = true;
                 powerManagement.enable = true;
-                package = nvidiaPackageWithUnbindFix;
+                package = config.boot.kernelPackages.nvidiaPackages.production;
             };
 
             nvidia-container-toolkit = lib.mkIf config.hostSettings.virtualization.docker.enable {

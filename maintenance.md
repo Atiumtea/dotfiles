@@ -21,18 +21,3 @@ flatpak install --system flathub \
 После установки проверить наличие обоих расширений, перезапустить приложения и удалить старые версии.
 
 Расширениями управлять через Flatpak, не закреплять их версии во flake: они должны соответствовать текущему системному драйверу.
-
-## Временный патч NVIDIA для GPU passthrough
-
-`modules/system/hardware/graphics/patches/nvidia-open-gpu-unbind.patch` исправляет утечку UVM reference count при динамическом отсоединении GPU (NVIDIA #1374). Применяется только к открытому kernel module; userspace не затрагивается.
-
-Патч рассчитан на исходники NVIDIA 595.112.07.
-
-**Когда убрать:** после появления эквивалентного исправления в upstream NVIDIA Open Kernel Module. Перед удалением проверить исходники новой версии.
-
-**Как убрать:**
-- Удалить `nvidiaPackage` и `nvidiaPackageWithUnbindFix` из `modules/system/hardware/graphics/nvidia.nix`.
-- Удалить `package = nvidiaPackageWithUnbindFix;`.
-- Удалить файл `nvidia-open-gpu-unbind.patch`.
-
-`hardware.nvidia.open = true` оставить. После удаления проверить сборку NixOS.

@@ -32,6 +32,8 @@
 
             security.sudo-rs.enable = true;
             hardware.graphics.nvidia.enable = true;
+            # Temporarily use the proprietary kernel module for GPU passthrough.
+            hardware.graphics.nvidia.open = false;
             hardware.graphics.amd.enable = false;
             hardware.laptop.enable = true;
             hardware.bluetooth.enable = true;
