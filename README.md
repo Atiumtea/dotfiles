@@ -143,6 +143,7 @@ modules/
 scripts/
   apply-boot.sh                  # rebuild wrapper (see below)
   snapshot-config.sh             # runtime diagnostics
+  gpu-switch.sh                   # guarded NVIDIA/VFIO handoff
 ```
 
 ---
@@ -157,7 +158,7 @@ scripts/
 | `users.nix`              | user accounts + groups from per-user `extraGroups`               |
 | `audio.nix`              | PipeWire + WirePlumber + JACK + rtkit + `playerctld`, pavucontrol |
 | `gaming.nix`             | Steam, Gamemode, `proton-ge-bin`                               |
-| `virtualization.nix`     | libvirt/QEMU/KVM, Docker, Looking Glass/KVMFR, dynamic VFIO GPU passthrough |
+| `virtualization.nix`     | libvirt/QEMU/KVM, Docker, Looking Glass/KVMFR, manual NVIDIA/VFIO GPU switching |
 | `security/`              | `sudo-rs`, restricted to `wheel`                               |
 | `desktop/hyprland.nix`   | `programs.hyprland`                                            |
 | `desktop/niri.nix`       | `programs.niri`                                                |
@@ -206,6 +207,14 @@ available hibernation actions require an in-menu confirmation.
 
 **`nixsnap`** — captures live NixOS, hardware, generation, service,
 desktop and local Git state without exporting configuration contents.
+
+**`gpu-switch`** — guarded system-wide NVIDIA/VFIO handoff. NVIDIA kernel
+modules stay installed but are blocked from automatic loading; use
+`sudo gpu-switch vm` before starting `win10`, `sudo gpu-switch host`
+after it is fully shut down, and `sudo gpu-switch status` to inspect
+driver ownership. Switching is refused while the VM or a GPU user is
+active, or when the IOMMU group has another host-bound device. The
+script does not force PCI resets or device removal.
 Keeps the latest 100 diagnostic reports and `nixapply` logs together.
 
 **`modules/user/desktop/common/waybar-bluetooth-display.sh`** — tiny
