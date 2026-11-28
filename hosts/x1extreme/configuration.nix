@@ -30,7 +30,8 @@
             ];
 
             security.sudo-rs.enable = true;
-            hardware.graphics.nvidia.enable = true;
+            # NVIDIA dGPU is exclusively reserved for the Windows VM.
+            hardware.graphics.nvidia.enable = false;
             hardware.graphics.amd.enable = false;
             hardware.laptop.enable = true;
             hardware.bluetooth.enable = true;
